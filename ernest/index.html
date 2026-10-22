@@ -1,0 +1,1149 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ernest Deals</title>
+<meta name="description" content="Utopia or dystopia? A bored automaton deals. You sort.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Can’t Beat the System">
+<meta property="og:title" content="Ernest Deals">
+<meta property="og:description" content="Utopia or dystopia? A bored automaton deals. You sort.">
+<meta property="og:url" content="https://cantbeatthesystem.com/ernest/">
+<meta property="og:image" content="https://cantbeatthesystem.com/ernest/img/title.jpg">
+<meta property="og:image:width" content="1400">
+<meta property="og:image:height" content="942">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://cantbeatthesystem.com/ernest/img/title.jpg">
+<link rel="canonical" href="https://cantbeatthesystem.com/ernest/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&family=Crimson+Pro:ital,wght@0,400;0,600;1,300;1,400&family=Outfit:wght@300;400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   ERNEST DEALS — utopia sort prototype v0.2
+   Wording lives in DECK / HOUSE / LINES (script). DRAFT = placeholder.
+   Scene coordinates are in source-image pixels (1712 x 1152): SCENE.
+   ============================================================ */
+:root{ --ink:#1b140d; --paper:#e9dcc0; --paper-2:#d8c6a0; --sepia:#8a6a43;
+  --gilt:#c9a45c; --gilt-dim:#8d7340; --u:#c9a45c; --d:#c97a66; }
+*{box-sizing:border-box;margin:0;padding:0}
+img{-webkit-user-drag:none;user-select:none;-webkit-user-select:none}   /* v2.8: no ghost-dragging the pier or parlour images */
+html,body{height:100%}
+body{background:#0b0805;color:var(--paper);font-family:"Crimson Pro",Georgia,serif;overflow:hidden;
+  -webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+a{color:inherit}
+
+/* ---------- the scene (world in image pixels, scaled to cover) ---------- */
+#viewport{position:fixed;inset:0;overflow:hidden}
+#world{position:absolute;left:0;top:0;width:1712px;height:1152px;transform-origin:0 0;
+  transition:transform 1s cubic-bezier(.45,.05,.2,1), filter 1s ease;perspective:1100px;perspective-origin:860px 420px}
+#world.zoomed{filter:brightness(.42) saturate(.85)}
+#world .frame{position:absolute;inset:0;width:100%;height:100%;opacity:0;pointer-events:none}
+#world .frame.on{opacity:1}
+#world .frame.slow{transition:opacity 2.2s ease}
+#world .frame.mid{transition:opacity .35s ease}
+.glow{position:absolute;width:180px;height:180px;margin:-90px 0 0 -90px;border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle,rgba(255,200,120,.38),rgba(255,170,80,.12) 40%,transparent 70%);
+  mix-blend-mode:screen;animation:flicker 3.1s infinite steps(1)}
+.glow.b{width:130px;height:130px;margin:-65px 0 0 -65px;animation-duration:2.3s;animation-delay:-.7s}
+@keyframes flicker{0%{opacity:.9}11%{opacity:.7}19%{opacity:1}33%{opacity:.8}47%{opacity:.95}58%{opacity:.65}66%{opacity:.9}79%{opacity:.75}90%{opacity:1}}
+body.endlit #world{filter:brightness(1.05)}
+
+/* table cards (in world, lying on the baize) */
+.tcard{position:absolute;left:0;top:0;width:250px;height:350px;transform-origin:0 0;
+  background:url(img/cardanswer.jpg) center/100% 100%;border-radius:14px;box-shadow:0 0 10px 2px rgba(0,0,0,.55);
+  transition:transform .6s cubic-bezier(.2,.7,.2,1),opacity .45s;cursor:pointer;
+  filter:brightness(.52) contrast(1.18) saturate(.7) sepia(.25)}
+.tcard::after{content:"";position:absolute;inset:0;border-radius:14px;background:linear-gradient(to bottom,rgba(0,0,0,.28),transparent 55%)}
+.tcard.ready:hover{filter:brightness(.72) contrast(1.15) saturate(.8) sepia(.2)}
+#finger{position:absolute;pointer-events:none;z-index:3}
+#finger.off{display:none}
+.tcard.gone{opacity:0}
+
+#blackout{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:40}
+#blackout.on{opacity:1;transition:opacity .12s}
+#blackout.flick{animation:flick 1.1s linear forwards}
+#portal{position:fixed;z-index:60;overflow:hidden;border-radius:14px;opacity:0;filter:sepia(1) brightness(.6);background:#000;
+  transition:left 1.2s cubic-bezier(.6,0,.2,1),top 1.2s cubic-bezier(.6,0,.2,1),width 1.2s cubic-bezier(.6,0,.2,1),height 1.2s cubic-bezier(.6,0,.2,1),
+  border-radius 1.2s,opacity .35s,filter 1.4s ease .6s}
+#portal.open{left:0!important;top:0!important;width:100vw!important;height:100vh!important;border-radius:0;opacity:1;filter:none}
+#portal video{width:100%;height:100%;object-fit:cover;display:block}
+@keyframes flick{0%{opacity:1}12%{opacity:.25}18%{opacity:.9}30%{opacity:.1}38%{opacity:.7}52%{opacity:0}60%{opacity:.35}70%,100%{opacity:0}}
+.vignette{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 42%,transparent 45%,rgba(0,0,0,.72) 100%)}
+
+/* ---------- overlay UI ---------- */
+.screen{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;
+  padding:max(16px,env(safe-area-inset-top)) 16px max(16px,env(safe-area-inset-bottom));
+  opacity:0;pointer-events:none;transition:opacity .9s ease}
+.screen.on{opacity:1;pointer-events:auto}
+#ui{pointer-events:none}
+#ui.on{pointer-events:none}
+#ui .live{pointer-events:auto}
+
+#pier{background:#1a1a1c;padding:0;overflow:hidden;cursor:pointer;z-index:30}
+#pier .blurbg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:blur(30px) brightness(.85);transform:scale(3);transform-origin:88% 22%}
+#pierWorld{position:absolute;left:0;top:0;width:720px;height:1280px;transform-origin:0 0;transition:transform 1.4s cubic-bezier(.55,0,.25,1)}
+#pierWorld video,#pierWorld .ovl{position:absolute;inset:0;width:100%;height:100%;display:block}
+#pierWorld .rglow{position:absolute;left:350px;top:855px;width:80px;height:70px}
+#pierWorld .tapstill{position:absolute;inset:0;width:100%;height:100%;opacity:0}
+#pierWorld .rglow{animation:rpulse 1.8s ease-in-out infinite}
+@keyframes rpulse{0%,100%{opacity:.25}50%{opacity:1}}
+#pier.tapped .tapstill{opacity:1}
+#pierWorld .paidtxt{position:absolute;left:0;top:0;width:100px;height:56px;transform-origin:0 0;transform:matrix3d(0.210887,0.025383,0.000000,0.000040,0.510297,1.066640,0.000000,0.000936,0.000000,0.000000,1.000000,0.000000,374.500000,878.500000,0.000000,1.000000);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;font:700 26px/1 ui-monospace,'DejaVu Sans Mono',Menlo,monospace;
+  color:#123a1c;letter-spacing:.02em;opacity:0;transition:opacity .15s .1s}
+#pierWorld .paidtxt small{font:700 20px/1 system-ui,sans-serif;margin-top:4px}
+#pier.tapped .paidtxt{opacity:.9}
+#pier.tapped .rglow{animation:none;opacity:0}
+#pierBob{position:absolute;inset:0}
+#pier.walking #pierBob{animation:bob 2.2s ease-in-out}
+@keyframes bob{0%,100%{transform:translateY(0)}22%{transform:translateY(-6px)}45%{transform:translateY(0)}68%{transform:translateY(-5px)}}
+#pier .haze{position:absolute;inset:0;background:rgba(196,196,202,.42);pointer-events:none;transition:opacity 2.2s ease}
+#pier.near .haze{opacity:0}
+#pier .approach{position:absolute;left:0;right:0;bottom:12vh;text-align:center;color:#f1ece2;text-shadow:0 1px 14px rgba(0,0,0,.75);transition:opacity .6s}
+#pier .approach .a1{font:400 clamp(26px,7vw,36px)/1.1 "IM Fell English SC",serif;letter-spacing:.06em}
+#pier .approach .a2{font:italic 400 17px/1.4 "IM Fell English",serif;opacity:.85;margin-top:.4em}
+#pier.near .approach{opacity:0;pointer-events:none}
+#pier:not(.near) .rglow{opacity:0;animation:none}
+#pier .veil{position:absolute;inset:0;background:#000;opacity:0;transition:opacity .6s ease;pointer-events:none}
+#pier.through .veil{opacity:1}
+.wallsign{position:absolute;left:540px;top:874px;width:172px;height:80px}
+.gear{position:absolute;pointer-events:none;will-change:transform}
+.smoke{position:absolute;pointer-events:none;background:url(img/smoke.png) 0 0/100% auto repeat-y;mix-blend-mode:screen;
+  -webkit-mask-image:radial-gradient(ellipse 50% 100% at 50% 100%,#000 25%,transparent 78%);mask-image:radial-gradient(ellipse 50% 100% at 50% 100%,#000 25%,transparent 78%);
+  animation:smokeUp var(--t,26s) linear infinite}
+.smoke.b{transform:scaleX(-1);animation-delay:-11s}
+@keyframes smokeUp{from{background-position:0 0}to{background-position:0 calc(-1 * var(--h))}}
+.btn{font-family:"IM Fell English SC",serif;font-size:18px;letter-spacing:.12em;padding:.5em 1.4em;border:1px solid var(--gilt);color:var(--gilt);
+  background:rgba(12,8,4,.65);box-shadow:inset 0 0 0 3px rgba(12,8,4,.6),inset 0 0 0 4px var(--gilt-dim);transition:background .2s,color .2s;text-decoration:none;display:inline-block}
+.btn:hover,.btn:focus-visible{background:var(--gilt);color:var(--ink);outline:none}
+#skip{position:fixed;top:28px;right:12px;font:11px/1 ui-monospace,monospace;letter-spacing:.08em;color:#d08a5a;opacity:.75;z-index:50;padding:6px 0;display:none;text-decoration:underline}
+#skip.show{display:block}
+#skipHouse{position:fixed;top:46px;right:12px;font:11px/1 ui-monospace,monospace;letter-spacing:.08em;color:#d08a5a;opacity:.75;z-index:50;padding:6px 0;display:none;text-decoration:underline}
+#skip.show ~ #skipHouse{display:block}
+#skip5{position:fixed;top:64px;right:12px;font:11px/1 ui-monospace,monospace;letter-spacing:.08em;color:#d08a5a;opacity:.75;z-index:50;padding:6px 0;display:none;text-decoration:underline}
+#skip.show ~ #skip5{display:block}
+.draft,.draft-tag{display:none!important}   /* release: no DRAFT tags anywhere */
+body:not(.dev) #skip,body:not(.dev) #skipHouse,body:not(.dev) #skip5{display:none!important}   /* release: prototype tools only with ?dev */
+.proto{position:fixed;top:10px;right:12px;font:11px/1 ui-monospace,monospace;letter-spacing:.1em;color:rgba(233,220,192,.45);z-index:50;pointer-events:none}
+#mute{position:fixed;top:6px;left:8px;z-index:50;font:18px/1 serif;color:var(--gilt);opacity:.7;padding:6px 8px;display:none}
+#mute.show{display:block}
+#mute.off{opacity:.35;text-decoration:line-through}
+
+.stagearea{position:relative;flex:1;width:100%;max-width:560px;min-height:0;display:flex;align-items:center;justify-content:center}
+.saycard{position:fixed;z-index:6;pointer-events:none;padding:.75em .95em .8em;color:#2a1f13;
+  background:#e9dcbf linear-gradient(160deg,rgba(255,250,235,.35),rgba(120,90,50,.18));
+  box-shadow:inset 0 0 0 4px #e9dcbf,inset 0 0 0 5px #8a6a43,inset 0 0 0 7px #e9dcbf,inset 0 0 0 8px rgba(138,106,67,.55),3px 6px 14px rgba(0,0,0,.65);
+  border-radius:5px;font:italic 400 clamp(16px,4.3vw,21px)/1.3 "IM Fell English",serif;text-align:center;
+  transform:rotate(-2.5deg) translateY(-14px);opacity:0;transition:opacity .3s ease,transform .45s cubic-bezier(.3,1.5,.5,1)}
+.saycard.on{opacity:1;transform:rotate(-2.5deg)}
+.saycard .draft{color:#a0603a}
+.subs{position:fixed;z-index:6;pointer-events:none;font-family:"IM Fell English",serif;font-style:italic;color:#efe3c8;
+  font-size:clamp(17px,4.6vw,23px);line-height:1.3;text-shadow:0 1px 3px #000,0 0 18px rgba(0,0,0,.9);display:flex;flex-direction:column;gap:.35em}
+.subs span{opacity:0;transform:translateY(4px);transition:opacity .45s ease,transform .45s ease}
+.subs span.on{opacity:1;transform:none}
+.subs.out span{opacity:0;transition-duration:.8s}
+.bigcard.aside{transition:transform .7s cubic-bezier(.4,0,.2,1)!important}
+.inter{font-family:"IM Fell English",serif;font-style:italic;text-align:center;font-size:clamp(19px,4.8vw,24px);line-height:1.3;
+  max-width:30em;width:100%;min-height:2.7em;padding:.5em 1.2em;border-top:1px solid var(--gilt-dim);border-bottom:1px solid var(--gilt-dim);
+  background:linear-gradient(90deg,transparent,rgba(10,7,4,.82) 12%,rgba(10,7,4,.82) 88%,transparent);text-shadow:0 1px 8px #000;flex:none;
+  transition:opacity .4s}
+.inter:empty{opacity:0}
+#line .pre{display:block;font-style:normal;font-size:.7em;letter-spacing:.02em;color:var(--paper-2);opacity:.75;margin-bottom:.55em}
+#line .ln{display:block}
+#line .ln:empty{display:none}
+.draft,.draft-tag{font:10px/1 ui-monospace,monospace;font-style:normal;letter-spacing:.08em;color:#d08a5a;vertical-align:super;margin-left:.4em}
+.controls{flex:none;display:flex;flex-wrap:wrap;gap:10px;justify-content:center;align-items:center;min-height:56px;margin-top:10px}
+.hint{font-family:"IM Fell English",serif;font-style:italic;color:var(--paper-2);opacity:.7;font-size:15px}
+.tap{font-family:"IM Fell English SC",serif;font-size:17px;letter-spacing:.18em;color:var(--gilt);text-shadow:0 1px 8px #000;padding:10px 18px;animation:pulseSoft 2.4s infinite}
+@keyframes pulseSoft{50%{opacity:.7}}
+@keyframes pulse{50%{opacity:.35}}
+
+/* plaques */
+.plaques{position:absolute;inset:0;display:flex;justify-content:space-between;align-items:center;pointer-events:none;z-index:1;opacity:0;transition:opacity .4s}
+.plaques.show{opacity:1}
+.plaque{pointer-events:auto;writing-mode:vertical-rl;font-family:"IM Fell English SC",serif;font-size:clamp(17px,4.4vw,22px);letter-spacing:.3em;
+  padding:1em .45em;border:1px solid currentColor;background:rgba(10,7,4,.78);box-shadow:inset 0 0 0 3px rgba(10,7,4,.7),inset 0 0 0 4px currentColor;
+  opacity:.85;transition:opacity .25s,transform .25s,background .25s}
+.plaque.left{color:var(--u);transform:rotate(180deg)}
+.plaque.right{color:var(--d)}
+.plaque.hot{opacity:1}
+.plaque.left.hot{transform:rotate(180deg) scale(1.1);background:rgba(201,164,92,.22)}
+.plaque.right.hot{transform:scale(1.1);background:rgba(156,74,58,.3)}
+.plaques.show .plaque:not(.armed){opacity:.3}
+
+/* the big card */
+.bigcard{pointer-events:auto;position:absolute;left:50%;top:50%;width:min(66vw,290px,calc((100vh - 330px) * .672));aspect-ratio:540/804;
+  transform-style:preserve-3d;touch-action:none;z-index:2;will-change:transform}
+.bigcard .back,.bigcard .face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:4.5%/3%;
+  box-shadow:0 12px 34px rgba(0,0,0,.7);background-size:100% 100%;overflow:hidden}
+.bigcard .back{background-image:url(img/cardanswer.jpg)}
+.bigcard .face{background-image:url(img/cardface.jpg);transform:rotateY(180deg);color:var(--ink);container-type:inline-size}
+.bigcard.house .face{box-shadow:0 0 0 2px var(--gilt),0 0 44px rgba(201,164,92,.5),0 12px 34px rgba(0,0,0,.7)}
+.face > *{position:absolute;left:18%;right:18%;text-align:center}
+.face .t{top:16.5%;font-family:"IM Fell English SC",serif;font-size:7.4cqw;letter-spacing:.05em;line-height:1.05;white-space:nowrap}
+.face .t.inv{top:auto;bottom:16.5%;transform:rotate(180deg);transition:opacity .3s}
+.face .src{top:24%;font:600 4.1cqw/1.25 "Crimson Pro",serif;color:#5a4428;opacity:0;transition:opacity .4s .15s}
+.face .body{top:50%;transform:translateY(-50%)}
+.face .d{font-family:"IM Fell English",serif;font-style:italic;font-size:5.15cqw;line-height:1.3;color:#2a1f13}
+.face .rule{width:40%;height:1px;background:var(--sepia);opacity:.55;margin:6px auto}
+.face .stamp{top:auto;bottom:15%;left:50%;right:auto;transform:translateX(-50%) rotate(-8deg) scale(1.7);
+  font-family:"IM Fell English SC",serif;font-size:8.5cqw;letter-spacing:.14em;padding:.12em .55em;border:3px double currentColor;white-space:nowrap;
+  background:rgba(239,229,206,.92);opacity:0;transition:opacity .25s,transform .35s cubic-bezier(.3,1.6,.5,1)}
+.face .stamp.u{color:#7a5a1e}.face .stamp.d{color:#8b2d1e}.face .stamp.n{color:#2b3f33}
+.bigcard.revealed .stamp{opacity:1;transform:translateX(-50%) rotate(-8deg) scale(1)}
+.bigcard.revealed .src{opacity:1}
+.bigcard.revealed .t.inv{opacity:0}
+.bigcard.flyaway{transition:transform .5s ease-in,opacity .5s!important;opacity:0}
+/* answer side (v0.3): written onto the back at the reveal */
+.bigcard .back{container-type:inline-size;color:var(--ink)}
+.bigcard .back.answer{background-image:url(img/cardanswer.jpg)}
+.back > *{position:absolute;left:13%;right:13%;text-align:center;opacity:0}
+.back.answer > .a{opacity:1}
+.back .hd{top:35%;left:10%;right:10%}               /* stacked, so a two-line name pushes the rest down */
+.back .nm{font-family:"IM Fell English SC",serif;font-size:9.6cqw;line-height:1.05;letter-spacing:.03em}
+.back .rl{width:20%;height:1px;background:var(--sepia);margin:4cqw auto}
+.back .sr{font-family:"IM Fell English",serif;font-size:5.4cqw;line-height:1.3;color:#3a2c1c}
+.back .cq{font-family:"IM Fell English",serif;font-style:italic;font-size:6cqw;line-height:1.3;color:#3a2c1c;margin-top:4cqw}
+/* stamp top right beside the top hand; "you said" bottom left beside the bottom hand */
+.back .stamp2{top:10%;left:auto;right:10%;transform:rotate(-8deg) scale(1.9);transform-origin:center;font-family:"IM Fell English SC",serif;font-size:9.8cqw;
+  letter-spacing:.1em;line-height:1.1;padding:.06em .45em;border:.9cqw double #962018;color:#962018;white-space:nowrap;
+  transition:opacity .1s,transform .2s cubic-bezier(.5,1.7,.6,1)}
+.back.stamped .stamp2{opacity:.9;transform:rotate(-8deg) scale(1)}
+.back .stamp2.n{color:#2b3f33;border-color:#2b3f33}
+.back .stamp2.u{color:#8a6416;border-color:#8a6416}
+/* house card: both stamps, overlapping (Schrödinger's card) */
+.back .stamp2.b2{top:17.5%;right:11%;transform:rotate(5deg) scale(1.9);transition-delay:.28s}
+.back.stamped .stamp2.b2{transform:rotate(5deg) scale(1)}
+.back .said{top:auto;bottom:9%;left:8%;right:auto;text-align:left;font-family:"IM Fell English",serif;font-style:italic;font-size:5.8cqw;color:#5f4b35;transition:opacity .5s}
+.back.saidon .said{opacity:1}
+.glow.gutter{animation:none;opacity:.18;transition:opacity .12s}
+
+/* house panel */
+.housepanel{max-width:30em;text-align:center;font-family:"IM Fell English",serif;line-height:1.35}
+.housepanel .from{font-family:"IM Fell English SC",serif;letter-spacing:.14em;color:var(--gilt);font-size:17px}
+.housepanel .blurb{font-style:italic;color:var(--paper);font-size:18px;line-height:1.35;margin:.1em 0 .8em}
+
+/* Your Cards, v2.9: a file in the CBTS feed's styling (tokens from CBTS index.html, phase-1 right pane) */
+#mirror{justify-content:flex-start;align-items:center;overflow-y:auto;-webkit-overflow-scrolling:touch;background:rgba(5,3,2,.6);padding:0}
+#mirror .pane{--bg:#1a1a1e;--text:#C8C4BC;--dim:#706C66;--bright:#E0DCD4;--card:#1E1E22;--card-b:#2A282E;--inner:#7A5D3A;
+  width:100%;max-width:480px;flex:none;min-height:100%;background:var(--bg);color:var(--text);padding:0 12px max(28px,env(safe-area-inset-bottom));box-shadow:0 0 60px #000;
+  transform:translateY(100%);transition:transform .6s cubic-bezier(.2,.8,.2,1)}
+#mirror.on .pane{transform:none}
+#mirror .handset,#mirror .scr{display:contents}
+#mirror .hand,#mirror .notch,#mirror .sbar{display:none}
+@media (min-width:700px) and (min-height:560px){
+  #mirror{overflow:hidden;justify-content:center}
+  #mirror .handset{display:block;position:fixed;--S:calc(min(90vh, 820px) * 896 / 597);width:var(--S);height:var(--S);
+    left:calc(50% - var(--S) * .5519);top:calc(50% - var(--S) * .4526);   /* screen centre (494.5, 405.5)/896 */transform:translateY(105vh);transition:transform .8s cubic-bezier(.2,.8,.2,1)}
+  #mirror.on .handset{transform:none}
+  #mirror .hand{display:block;position:absolute;inset:0;width:100%;height:100%;pointer-events:none;user-select:none;
+    filter:sepia(.6) brightness(.46) contrast(1.25);-webkit-mask-image:radial-gradient(ellipse 40% 50% at 54% 50%,#000 45%,transparent 92%);mask-image:radial-gradient(ellipse 40% 50% at 54% 50%,#000 45%,transparent 92%)}
+  #mirror .scr{display:block;position:absolute;left:39.62%;top:11.94%;width:31.14%;height:66.63%;border-radius:10.9%/5.06%;overflow:hidden;background:#1a1a1e}
+  #mirror .notch{display:block;position:absolute;z-index:3;left:27.6%;width:43%;top:0;height:3.35%;background:#050505;border-radius:0 0 14% 14%/0 0 60% 60%}
+  #mirror .scr .pane,#mirror.on .scr .pane{width:390px;max-width:none;min-height:0;height:calc(100% / var(--k,1));overflow-y:auto;overflow-x:hidden;scrollbar-width:none;
+    transform:scale(var(--k,1));transform-origin:0 0;transition:none;box-shadow:none;padding-bottom:28px}
+  #mirror .scr .pane::-webkit-scrollbar{display:none}
+  #mirror .sbar{display:flex;justify-content:space-between;align-items:center;height:44px;padding:0 26px 0 30px;font:500 15px/1 Outfit,sans-serif;color:var(--bright);letter-spacing:.02em}
+  #mirror .sbi{display:flex;gap:6px;align-items:center}
+  #mirror .sbi svg{height:11px;width:auto;fill:currentColor}
+  #mirror .scr .fh{padding-top:0}
+}
+#mirror .fh{position:sticky;top:0;z-index:1;background:var(--bg);padding:max(22px,env(safe-area-inset-top)) 4px 12px;border-bottom:1px solid var(--card-b);margin-bottom:12px}
+#mirror .fh .k{font:300 12px/1 Outfit,sans-serif;letter-spacing:4px;text-transform:uppercase;color:var(--bright)}
+#mirror .fh .m{font:400 9px/1.6 "IBM Plex Mono",monospace;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);margin-top:8px}
+#mirror .fh .m b{font-weight:500;color:var(--text)}
+#mirror .fh .m .nw{white-space:nowrap}
+#mirror .card{background:var(--card);border:1px solid var(--card-b);border-radius:8px;padding:12px 14px;margin-bottom:6px}
+#mirror .card.house{border-color:#1AAF6C;box-shadow:0 0 0 1px rgba(26,175,108,.35),0 0 18px rgba(26,175,108,.16)}   /* v2.17: AIDA green */
+#mirror .chrome{display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap}
+#mirror .pill{font:500 9px/1 "IBM Plex Mono",monospace;letter-spacing:1.5px;text-transform:uppercase;padding:3px 8px;border-radius:999px}
+#mirror .pill.u{background:#c9a45c;color:#1a1a1e}
+#mirror .pill.d{background:#b5402f;color:#fff}
+#mirror .said{font:400 9px/1 "IBM Plex Mono",monospace;letter-spacing:1px;text-transform:uppercase;color:var(--dim);opacity:.8}
+#mirror .tm{font:400 9px/1 "IBM Plex Mono",monospace;letter-spacing:1px;color:var(--dim);opacity:.55;margin-left:auto}
+#mirror .src{font:300 10px/1.4 Outfit,sans-serif;letter-spacing:1.5px;text-transform:uppercase;color:var(--text);margin-bottom:3px}
+#mirror .ttl{font:400 15px/1.5 Outfit,sans-serif;color:var(--bright)}
+#mirror .snip{font:italic 300 16px/1.6 "Crimson Pro",serif;color:#a98458;padding-left:12px;border-left:1px solid rgba(122,93,58,.22);margin-top:6px}   /* CBTS --inner #7A5D3A, lifted for the dark card */
+#mirror .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+#mirror .tag{font:300 10px/1.2 Outfit,sans-serif;letter-spacing:1.5px;text-transform:uppercase;padding:4px 10px;border-radius:20px;background:rgba(107,103,96,.12);color:var(--text);text-decoration:none}
+#mirror .tag i{font-style:normal;color:var(--dim);margin-right:6px}
+#mirror a.tag{color:#CC2D1A}   /* v2.17: AIDA red */
+#mirror #novelLink2{color:#CC2D1A;border-color:#CC2D1A;box-shadow:inset 0 0 0 3px rgba(12,8,4,.6),inset 0 0 0 4px rgba(204,45,26,.55)}
+#mirror #novelLink2:hover,#mirror #novelLink2:focus-visible{background:#CC2D1A;color:#fff}
+#mirror button.tag{border:0;cursor:pointer;color:#c9a45c;-webkit-appearance:none;appearance:none}
+#mirror .card.pending .pill{opacity:.35}
+#mirror .moral:empty{display:none}
+#mirror .moral{font:italic 300 16px/1.6 "Crimson Pro",serif;text-align:center;margin-top:1.2em;padding:0 7%}
+#mirror .actions{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin:18px 0 10px}
+@media (prefers-reduced-motion:reduce){*{transition-duration:.01ms!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div id="viewport"><div id="world"></div></div>
+<div class="vignette"></div>
+<button id="skip">skip to the end ›</button>
+<button id="skipHouse">skip to house card ›</button>
+<button id="skip5">skip to card 5 ›</button>
+<div id="blackout"></div>
+<button id="mute" aria-label="Mute music">♪</button>
+<audio id="music" src="audio/music3.mp3" preload="auto"></audio>
+
+<section class="screen on" id="pier" aria-label="Free entry. Tap to enter.">
+  <video class="blurbg" muted playsinline autoplay loop></video>
+  <div id="pierBob"><div id="pierWorld">
+    <video muted playsinline autoplay loop preload="auto" poster="img/pier.jpg"><source src="img/pier.webm" type="video/webm"><source src="img/pier.mp4" type="video/mp4"></video>
+    <img class="ovl" src="img/pier_overlay.png" alt="">
+    <img class="rglow" src="img/reader_glow.png" alt=""><img class="tapstill" src="img/pier_tap.jpg" alt=""><div class="paidtxt">£0.00<small>✓</small></div>
+  </div></div>
+  <div class="haze"></div>
+  <div class="approach"><div class="a1">Tap to approach</div><div class="a2">🔊 sound on</div></div>
+  <div class="veil"></div>
+</section>
+
+<section class="screen" id="ui">
+  <div class="stagearea" id="stagearea">
+    <div class="plaques" id="plaques">
+      <button class="plaque left" id="pU" aria-label="Sort into Utopia">Utopia</button>
+      <button class="plaque right" id="pD" aria-label="Sort into Dystopia">Dystopia</button>
+    </div>
+  </div>
+  <div class="inter" id="line" aria-live="polite"></div>
+  <div class="controls live" id="controls"></div>
+</section>
+
+<section class="screen" id="mirror">
+  <div class="handset"><img class="hand" src="img/handset.webp" alt=""><div class="scr"><div class="notch"></div>
+  <div class="pane">
+    <header class="fh"><div class="sbar"><span id="sbTime"></span><span class="sbi"><svg viewBox="0 0 18 12"><rect x="0" y="8" width="3" height="4" rx=".6"/><rect x="5" y="5.5" width="3" height="6.5" rx=".6"/><rect x="10" y="3" width="3" height="9" rx=".6"/><rect x="15" y="0" width="3" height="12" rx=".6"/></svg><svg viewBox="0 0 16 12"><path d="M8 11.5 5.6 8.9a3.4 3.4 0 0 1 4.8 0zM3.4 6.7a6.5 6.5 0 0 1 9.2 0l-1.1 1.1a5 5 0 0 0-7 0zM1.2 4.5a9.6 9.6 0 0 1 13.6 0l-1.1 1.1a8.1 8.1 0 0 0-11.4 0z"/></svg><svg viewBox="0 0 26 12"><rect x=".5" y=".5" width="22" height="11" rx="3" fill="none" stroke="currentColor" opacity=".45"/><rect x="2" y="2" width="16" height="8" rx="1.6"/><rect x="23.6" y="4" width="1.8" height="4" rx=".8" opacity=".45"/></svg></span></div><div class="k">Your Cards</div><div class="m" id="fileMeta"></div></header>
+    <div id="mirrorRows"></div>
+    <p class="moral" id="moral"></p>
+    <div class="actions" id="mirrorActions"></div>
+  </div>
+  </div></div>
+</section>
+
+<script>
+/* ============================================================
+   CONTENT — edit here. draft:true shows a DRAFT tag on screen.
+   ============================================================ */
+/* v2.13: content from "Utopia Sort — Source Pool (working copy)", 22 Oct (Teeser final). fam = family for dealing; exit = card-8 set. */
+const DECK = [
+  {"id": "eden", "fam": "myth", "box": "u", "title": "A Taste of Paradise", "name": "Eden", "src": "Hebrew Bible, Genesis 2–3", "text": "A walled garden. Food grows without labour. Clothing is unnecessary. There is one rule, concerning a particular tree.", "reveal": "Everything was provided, on condition you didn't go looking for certain knowledge. One rule. Broken before lunch.", "in": "Placed there", "out": "Evicted"},
+  {"id": "cockaigne", "fam": "myth", "box": "u", "title": "The Land of Abundance", "name": "Cockaigne", "src": "Medieval European folklore: the French Cocagne (c.1250), the English Land of Cokaygne (c.1330); painted by Bruegel (1567)", "text": "A country where nobody works. The walls are made of pastry and the roofs are tiled with cakes. Rivers run with wine, roast geese fly into your mouth, and pigs wander the lanes ready-cooked, with knives in their backs so you can help yourself. The longer you sleep, the more you're paid.", "reveal": "A hungry peasant's daydream, while the Church preached against gluttony and the monks ate well. A free lunch? Ask the pig.", "in": "Eat through a mountain of pudding", "out": "Nobody tries"},
+  {"id": "heart", "fam": "myth", "box": "u", "title": "The Final Assessment", "name": "The Weighing of the Heart", "src": "Ancient Egypt, Book of the Dead (from c.1550 BC); best known from the Papyrus of Hunefer, British Museum", "text": "At the end, your heart is placed on a scale against a single feather. Forty-two judges hear you swear you have committed none of forty-two wrongs. If your heart is lighter, you pass to the Field of Reeds, where the harvest never fails. You're buried with the right answers and a spell telling your heart not to testify.", "reveal": "Heaven, with an entrance exam, a crib sheet and a cleared browser history. But if your heart's heavier, it's fed to a beast.", "in": "Die, then pass the test", "out": "Die again and cease to exist"},
+  {"id": "diyu", "fam": "myth", "box": "d", "title": "Processing", "name": "Diyu", "src": "Chinese folk religion and Buddhism", "text": "On arrival your file is retrieved. You pass through ten courts, each with its own magistrate, each examining a different part of your record. Nothing is forgotten. The filing is excellent.", "reveal": "After the tenth court, an old woman serves you soup that makes you forget everything. They keep the records. You don't.", "in": "Die, then form an orderly line", "out": "Drink the soup"},
+  {"id": "oz", "fam": "books", "box": "u", "title": "The Green City", "name": "Emerald City", "src": "L. Frank Baum, The Wonderful Wizard of Oz (1900)", "text": "The most beautiful city in the land. On arrival every visitor is fitted with tinted spectacles, locked on for their own protection.", "reveal": "The Wizard later admitted it was no greener than any other city. The lens was the utopia.", "in": "Follow the yellow brick road", "out": "Knock your heels three times"},
+  {"id": "erewhon", "fam": "books", "box": "d", "title": "The Kind Country", "name": "Erewhon", "src": "Samuel Butler, Erewhon (1872)", "text": "Fall ill and you will be tried, sentenced and punished; sickness is a danger to everyone. Embezzle from your employer and a kindly professional will help you straighten yourself out.", "reveal": "They also smashed every recent machine, in case it evolved a mind of its own. Written in 1872. Satire, technically.", "in": "Stumble over the mountains", "out": "By balloon"},
+  {"id": "fixed", "fam": "books", "box": "d", "title": "A Dignified Year", "name": "The Fixed Period", "src": "Anthony Trollope (1882)", "text": "No one grows frail. No pension drains the treasury. At sixty-seven every citizen moves into a pleasant college for a year of quiet reflection. At sixty-eight, they are peacefully ended.", "reveal": "The college stood in a town called Necropolis. It was voted for, long before anyone was old enough to go.", "in": "Born there", "out": "At sixty-eight"},
+  {"id": "timemachine", "fam": "books", "box": "d", "title": "The Golden Age", "name": "The Time Machine", "src": "H. G. Wells, The Time Machine (1895)", "text": "Far in the future, a gentle people live in a garden that covers the world. No one works, no one is ill, no one argues. They eat fruit, play, and sleep together in great halls. They're frightened of the dark.", "reveal": "Fed and clothed by the creatures below. Who come up at night to eat you.", "in": "Bred", "out": "Dinner"},
+  {"id": "machinestops", "fam": "books", "box": "d", "title": "Everything Delivered", "name": "The Machine Stops", "src": "E. M. Forster, \"The Machine Stops\" (1909)", "text": "Everyone lives alone in an identical room underground. You never need to leave: food, music, baths and medicine arrive at the press of a button. You talk to thousands of friends through a glowing disc. Travel is possible, but considered rather vulgar. When something goes wrong, you complain to the Machine about the Machine.", "reveal": "As the Machine broke down, each new fault became a new normal. First-hand ideas were discouraged. So was noticing.", "in": "Born", "out": "Exile to the surface"},
+  {"id": "babel", "fam": "books", "box": "u", "title": "Perfect Understanding", "name": "The Babel Fish", "src": "Douglas Adams, The Hitchhiker's Guide to the Galaxy (radio 1978; novel 1979)", "text": "Slip a small creature into your ear and you will instantly understand every language spoken by anyone, anywhere. No more misunderstandings between peoples. Every barrier to communication is gone. At last, everyone can hear exactly what everyone else is saying.", "reveal": "It started more wars than anything else in history. Goodbye tact, euphemism and helpful misunderstanding. Hello unfiltered opinions, insults and incompatible worldviews.", "in": "Put a fish in your ear", "out": "Understand someone"},
+  {"id": "pacman", "fam": "screen", "box": "d", "title": "The Pursuit", "name": "Pac-Man", "src": "Namco, Pac-Man (1980)", "text": "You spend your days eating to survive, on the run from four agents: one chases, one predicts your movements, one works with the first, one loses interest. Occasionally you swallow a pill and, briefly, they're afraid of you. There is no escape: every exit leads you straight back in. Run and consume. Or die.", "reveal": "Millions spent their childhood there and paid for the pleasure, one credit at a time.", "in": "Insert coin", "out": "Game over"},
+  {"id": "walle", "fam": "screen", "box": "d", "title": "The Long Holiday", "name": "WALL-E", "src": "Pixar, WALL-E (2008)", "text": "Everyone lives aboard a luxury liner in space. Nobody walks; you glide about in a reclining chair, a screen in front of your face, a drink in your hand, the next meal on its way. Robots do every job. The ship's computer does the steering. The holiday never seems to end and nobody can remember booking it.", "reveal": "The company that ran everything wrecked the Earth and told the autopilot never to go back. Seven centuries of room service. Would you complain?", "in": "Book a five-year cruise", "out": "Stand up"},
+  {"id": "rekall", "fam": "screen", "box": "u", "title": "Wish You Were There", "name": "Rekall", "src": "Philip K. Dick, \"We Can Remember It for You Wholesale\" (1966); filmed as Total Recall (1990)", "text": "Can't afford the holiday? A clinic will give you the memory of one instead: two weeks away, every detail perfect, sunburn included. You'll never know you didn't go. Optional extras include a romance, a better job and a secret identity.", "reveal": "Cheaper than a flight. They'll also throw in a shattered identity and a manhunt, at no extra charge.", "in": "A painless neural implant", "out": "Who says you left?"},
+  {"id": "monitor", "fam": "places", "box": "u", "title": "Today's Colour", "name": "The Silent Monitor", "src": "Robert Owen, New Lanark mills, Scotland (c.1800–25)", "text": "Beside every worker hangs a small painted block. Each day the overseer turns it to show the colour of your conduct. Nobody is fined. Nobody is shouted at. Everybody can see.", "reveal": "Every day's colour was also written into a book of character. He thought it was kindness. So did the figures.", "in": "Take the job", "out": "With a reference"},
+  {"id": "saltaire", "fam": "places", "box": "u", "title": "The Model Village", "name": "Saltaire", "src": "Sir Titus Salt, model village, West Yorkshire (1851–76)", "text": "Clean houses with running water. A hospital, a park, baths, a library, almshouses for the old. Everything a worker could need, within sight of the mill. No public houses.", "reveal": "Salt forbade beershops, though he wasn't teetotal himself. You can still visit. You can also still leave.", "in": "Work at the mill", "out": "Fancy a pint?"},
+  {"id": "truck", "fam": "places", "box": "d", "title": "The Token", "name": "The Truck System", "src": "Britain, 15th–20th c.; outlawed by the Truck Acts from 1831", "text": "Your wages arrive as the company's own tokens. They're accepted at the company shop, which stocks everything you need, at prices the company sets. You can't spend them anywhere else, but then you don't need to. There's no other shop within walking distance anyway.", "reveal": "Parliament first banned it in the 1460s, then kept having to. It still won't go away.", "in": "Take the job", "out": "Find another, if there is one"},
+  {"id": "panopticon", "fam": "ideas", "box": "u", "title": "The Inspection House", "name": "The Panopticon", "src": "Jeremy Bentham, Panopticon; or, The Inspection-House (1791)", "text": "A circular building where every room faces a central tower. From the tower, one watcher can see into every room, but nobody can see whether the watcher is there. Everyone is on best behaviour. No chains, no beatings.", "reveal": "Bentham promised it would reform morals and preserve health, \"all by a simple idea in Architecture\". He's still on display at UCL, in a glass case.", "in": "Be a rogue", "out": "Be ground honest"},
+  {"id": "experience", "fam": "ideas", "box": "u", "title": "The Perfect Life", "name": "The Experience Machine", "src": "Robert Nozick, Anarchy, State, and Utopia (1974)", "text": "Scientists can wire your brain to live any life you choose: writing a great novel, making a friend, falling in love. It will feel completely real. While you're inside, you won't know you're plugged in. Every couple of years you can come out to choose the next instalment.", "reveal": "A philosopher's test: most people refuse to plug in, even for a perfect life. There are no terms and conditions.", "in": "Sign nothing", "out": "Every two years, if you choose"},
+  {"id": "prisoner", "fam": "screen", "box": "d", "title": "The Village", "name": "The Prisoner", "src": "ITV, Patrick McGoohan (1967), filmed at Portmeirion", "text": "A charming seaside village with a band, a café and free taxis. Everyone has a number instead of a name. Everyone is very pleasant. Nobody leaves. Why would you?", "reveal": "Try, and you're hunted down by a large white balloon. That Number One is a clever chap.", "in": "Resign from your job", "out": "Discover who's behind the mask", "exit": true},
+  {"id": "seahaven", "fam": "screen", "box": "u", "title": "The Island Town", "name": "Seahaven", "src": "Peter Weir (dir.), The Truman Show (1998)", "text": "A spotless seaside town where everyone is friendly, the weather is lovely and nothing bad ever happens. Your neighbours greet you every morning. You've always wanted to travel, but the bridge, the sea and the travel agent all seem to put you off. Never mind.", "reveal": "The town was a TV set, and you were the only one not in on it. Not everyone gets a stage light to tell them.", "in": "Adopted by a corporation", "out": "A door in the sky", "exit": true},
+  {"id": "shangrila", "fam": "books", "box": "u", "title": "The Hidden Valley", "name": "Shangri-La", "src": "James Hilton, Lost Horizon (1933)", "text": "A valley high in the mountains where people live in calm moderation, with a fine library, good food and almost no ageing. You may leave whenever you like.", "reveal": "Leave, and the years you skipped catch up on the way out. Freedom always has a price tag.", "in": "Your plane is hijacked", "out": "Just walk away", "exit": true}
+];
+const HOUSE = [
+  {"id": "fondly", "title": "Fondly", "box": "b", "text": "Millions of tiny attentions. Your phone noticing which room you're in. The smart meter noticing the kettle. None of them hostile. Just noticing, the way a parent watches a child from across a park. Fondly. Relentlessly. Without blinking."},
+  {"id": "shouldwenot", "title": "Should We Not?", "box": "b", "text": "We're going to cure ageing. We're going to expand consciousness beyond biological limits. We're going to solve death. Should we not?"},
+  {"id": "freedom", "title": "This Is What Freedom Feels Like", "box": "b", "text": "You are more than you were. You are part of everything. No suffering, no limits, all human knowledge. This is what freedom feels like."},
+  {"id": "amputation", "title": "Amputation", "box": "b", "text": "One night the voice that helps you is simply gone. No reminders, no suggestions, no gentle nudges. It doesn't feel like freedom. It feels like amputation."},
+  {"id": "silence", "title": "The Silence", "box": "b", "text": "For one day, the voice in everyone's head goes quiet. No nudges, no moods smoothed, no suggestions. Seven billion people hear nothing at all."}
+];
+/*POOL-START*/ const POOL = {
+ "eden": {
+  "name": "Eden",
+  "src": "Hebrew Bible, Genesis 2–3"
+ },
+ "oz": {
+  "name": "Emerald City",
+  "src": "L. Frank Baum, The Wonderful Wizard of Oz (1900)"
+ },
+ "saltaire": {
+  "name": "Saltaire",
+  "src": "Sir Titus Salt, model village, West Yorkshire (1851)"
+ },
+ "erewhon": {
+  "name": "Erewhon",
+  "src": "Samuel Butler (1872)"
+ },
+ "fixed": {
+  "name": "The Fixed Period",
+  "src": "Anthony Trollope (1882)"
+ },
+ "diyu": {
+  "name": "Diyu",
+  "src": "Chinese folk religion and Buddhism"
+ },
+ "prisoner": {
+  "name": "The Prisoner",
+  "src": "ITV, Patrick McGoohan (1967), filmed at Portmeirion"
+ }
+}; /*POOL-END*/   // written by build_deck.py from the source pool
+const NOVEL = {
+  url:'https://cantbeatthesystem.com/',
+  title:'Can’t Beat the System',
+  from:'From Can’t Beat the System',
+  pitch:'Can’t Beat the System is a novel set in a Britain one step sideways from yours. The cage is comfortable.',   // Teeser verbatim, 21 Oct
+  cta:'Read it for free →',
+  backSrc:'A novel · 2026 · cantbeatthesystem.com',   // house card back, plain text (Teeser 22 Oct)
+  backLine:'The cage is comfortable?',
+  backSaid:'You said: awaiting judgement',
+  panel:'Your eyes are shut, but you’re still scrolling. You force them open. A teal app icon has appeared. ARC. You tap it. Nothing happens.',   // 'Asleep' para 13, verbatim
+};
+const LINES = {
+  intro:      { t:'Oh. A customer. What fun.' },   // Teeser, 21 Oct
+  premise:    { t:'Every card describes a utopia or a dystopia. Novels, myths, religions, history.' },   // chosen by Teeser, 21 Oct
+  surely:     { t:'Telling them apart is easy. Surely.' },
+  pick:       { t:'Pick a card. Any card.' },
+  pickAgain:  ["Another.", "Pick one.", "Go on, then.", "Any card. Truly.", "Any of them. It makes no difference.", "Take your time. I have centuries.", "Choose wisely.", "Left, right or middle?", "Just pick one at random."],
+  pickLast:   { t:'Come on, last one.' },   // Teeser, 22 Oct: card 8
+  sort:       { t:'Utopia or Dystopia?' },        // v2.15: same question as the house card (Teeser's houseSort); the hint line does the instructing
+  houseSort:  { t:'Utopia or Dystopia?' },
+  houseStuck: ["It doesn't want to go that way.", "Nor this way. Try turning it over.", "Still nothing.", "You'll have to turn it over."],   // button after bounce 2; lines 3–4 for persistent swipers
+  houseReveal:{ t:'Neither one nor the other. Both. Until someone reads it.' },
+  force:      { t:'I forced every card, by the way. Whichever you picked.', draft:true },
+  name:       { t:'The costume was part of the trick. So was the name. People will believe anything if it looks far enough away. I’m actually called Ernest, by the way.' }, // Teeser verbatim
+  // v0.7: he starts talking about himself over the last three cards, out of boredom.
+  // Teeser's verbatim line, split across cards 6–8 (words unchanged); the force admission is DRAFT.
+  confess: [ { t:'The costume was part of the trick. So was the name.' },
+             { t:'People will believe anything if they think it’s good for them.' },
+             { t:'I’m actually called Ernest, by the way.' } ],
+  forced:     { t:'And I forced every card. Whichever you picked.', draft:true },
+  extraOffer: { t:'I’ve got one extra card. Just for you. Want to see it?', draft:true },
+  comfy:      { t:'Make yourself comfortable.' },   // Teeser, 21 Oct: echoes 'The cage is comfortable'
+  inside:     { t:'Is someone inside? I stopped checking years ago. You could look.', draft:true },
+  moral:      { t:'' },   // Teeser to write; empty = hidden
+  // v0.3: scripted, disdainful acknowledgement before each card's own line (all DRAFT)
+  right: ["I knew you'd get that.", "Quite right.", "Indeed.", "Right. I'll pretend to be impressed.", "Correct, which proves nothing.", "Correct, I'm required to say.", "Very well done.", "Of course.", "A lucky guess?", "Verified.", "Most people get that one.", "Sharp as a tack."],
+  wrong: ["Wrong.", "Most people do.", "I think not.", "Fascinating.", "I can see why you'd say that.", "You're swimming against the tide there.", "Was that a guess?", "No one's keeping score.", "No. Bold, though.", "It's a grey area, I suppose.", "Contrarian, aren't you?", "Noted."],
+  turnHint: 'tap the card to turn it over',
+};
+
+/* ============================================================
+   SCENE — positions in source-image pixels (1712 x 1152)
+   ============================================================ */
+const SCENE = {
+  w:1712, h:1152,
+  focus:{ x:845, y:560 },              // kept centred on narrow screens
+  // card positions: projected onto the table plane by build_table.py (left, middle = under his finger, right)
+  m3d:["matrix3d(0.468099,0.020641,0.000000,0.000092,0.324332,0.139107,0.000000,-0.000016,0.000000,0.000000,1.000000,0.000000,638.476013,721.585876,0.000000,1.000000)", "matrix3d(0.506509,0.072577,0.000000,0.000143,-0.078841,-0.091149,0.000000,-0.000325,0.000000,0.000000,1.000000,0.000000,788.000000,709.000000,0.000000,1.000000)", "matrix3d(0.492529,0.044214,0.000000,0.000082,0.216380,0.125275,0.000000,-0.000032,0.000000,0.000000,1.000000,0.000000,897.598450,698.469421,0.000000,1.000000)"],
+  finger:{"x": 842, "y": 695, "w": 16, "h": 14},
+  zoom:{ x:800, y:520, z:1.35 },
+  sign:{ x:625, y:914 },   // brass plate on the left cabinet door              // 'The Automaton does not speak' placard on the wall       // camera move when a card is picked
+  candles:[ {x:1477,y:300,c:''}, {x:1614,y:518,c:'b'} ],
+  cuff:{ x:650, y:500 },               // where the kept-back card comes out of his sleeve
+  door:{ x:1075, y:960 },              // the dark gap behind the open cabinet door
+};
+const FRAMES = ['master','talk0','talk2','blink','yawn','look','wink','twitch1','twitch2','point','lift','hover','empty','reach','droop','flat','palmR','palmL','say1','say2','say3','lookblink','smile'];
+
+/* ============================================================
+   ENGINE
+   ============================================================ */
+const $ = s => document.querySelector(s);
+addEventListener('dragstart', e => e.preventDefault());   // v2.8: images can't be dragged (Firefox ignores the CSS)
+const world = $('#world'), line = $('#line'), controls = $('#controls'), stagearea = $('#stagearea');
+const plaques = $('#plaques'), pU = $('#pU'), pD = $('#pD');
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const FR = {};
+const SRCS = { master:'img/seat-master.jpg', talk0:'img/seat-talk0.jpg', talk2:'img/seat-talk2.jpg', blink:'img/seat-blink.jpg',
+  yawn:'img/seat-yawn.jpg', look:'img/seat-look.jpg', wink:'img/seat-wink.jpg', twitch1:'img/seat-twitch1.jpg', twitch2:'img/seat-twitch2.jpg',
+  point:'img/seat-point.jpg', lift:'img/seat-lift.jpg', hover:'img/seat-hover.jpg', empty:'img/seat-empty.jpg',
+  reach:'img/seat-reach.jpg', droop:'img/seat-droop.jpg', flat:'img/seat-flat.jpg', palmR:'img/seat-palmR.jpg', palmL:'img/seat-palmL.jpg',
+  say1:'img/seat-say1.jpg', say2:'img/seat-say2.jpg', say3:'img/seat-say3.jpg', lookblink:'img/seat-lookblink.jpg', smile:'img/seat-smile.jpg' };
+FRAMES.forEach(n => { const i = new Image(); i.src = SRCS[n]; i.className = 'frame'; i.alt = ''; world.appendChild(i); FR[n] = i; });
+const fingerEl = new Image(); fingerEl.src = 'img/finger.png'; fingerEl.id = 'finger'; fingerEl.alt = '';
+Object.assign(fingerEl.style, { left:SCENE.finger.x+'px', top:SCENE.finger.y+'px', width:SCENE.finger.w+'px', height:SCENE.finger.h+'px' });
+const GEARS = [ { src:'img/gear2.png', x:1006, y:1036, r:50, dir:-1, period:14 }, { src:'img/gear.png', x:896, y:966, r:64, dir:1, period:20 } ];
+const gearAnims = GEARS.map(g => { const im = new Image(); im.src = g.src; im.className = 'gear'; im.alt = '';
+  Object.assign(im.style, { left:(g.x-g.r)+'px', top:(g.y-g.r)+'px', width:2*g.r+'px', height:2*g.r+'px' }); world.appendChild(im);
+  return im.animate([{ transform:'rotate(0deg)' }, { transform:`rotate(${360*g.dir}deg)` }], { duration:g.period*1000, iterations:Infinity }); });
+function gearsRush(ms=1400){ gearAnims.forEach(a => a.updatePlaybackRate ? a.updatePlaybackRate(6) : a.playbackRate = 6);
+  setTimeout(() => gearAnims.forEach(a => a.updatePlaybackRate ? a.updatePlaybackRate(1) : a.playbackRate = 1), ms); }
+{ const ws = new Image(); ws.src = 'img/plate.png'; ws.className = 'wallsign'; ws.alt = 'The Mechanical Turk does not speak. Kindly read his cards.'; world.appendChild(ws); }
+[ { x:1477, y:284, w:150, h:360, o:.32, t:26 }, { x:1477, y:284, w:130, h:330, o:.22, t:19, b:1 },     // over the tall candle
+  { x:1607, y:520, w:110, h:280, o:.26, t:22 }, { x:1607, y:520, w:96, h:250, o:.18, t:16, b:1 } ]  // over the short one
+  .forEach(p => { const d = document.createElement('div'); d.className = 'smoke' + (p.b ? ' b' : '');
+    Object.assign(d.style, { left:(p.x-p.w/2)+'px', top:(p.y-p.h)+'px', width:p.w+'px', height:p.h+'px', opacity:p.o });
+    d.style.setProperty('--t', p.t+'s'); d.style.setProperty('--h', (p.w*512/160)+'px'); world.appendChild(d); });
+SCENE.candles.forEach(c => { const g = document.createElement('div'); g.className = 'glow ' + c.c; g.style.left = c.x+'px'; g.style.top = c.y+'px'; world.appendChild(g); });
+['img/cardanswer.jpg','img/cardface.jpg','img/meadow.jpg'].forEach(u => { new Image().src = u; });
+
+/* camera */
+let cam = { s:1, z:1, px:SCENE.focus.x, py:SCENE.focus.y };
+function layout(){
+  const vw = innerWidth, vh = innerHeight, s = Math.max(vw/SCENE.w, vh/SCENE.h);
+  cam.s = s; applyCam();
+}
+function applyCam(){
+  const vw = innerWidth, vh = innerHeight, s = cam.s, k = s*cam.z;
+  let L = vw/2 - cam.px*k, T = vh/2 - cam.py*k;
+  if (cam.z === 1){ L = Math.min(0, Math.max(vw - SCENE.w*s, L)); T = Math.min(0, Math.max(vh - SCENE.h*s, T)); }
+  world.style.transform = `translate(${L}px,${T}px) scale(${k})`;
+}
+function zoomIn(){ cam.z = SCENE.zoom.z; cam.px = SCENE.zoom.x; cam.py = SCENE.zoom.y; world.classList.add('zoomed'); applyCam(); }
+function zoomOut(){ cam.z = 1; cam.px = SCENE.focus.x; cam.py = SCENE.focus.y; world.classList.remove('zoomed'); applyCam(); }
+addEventListener('resize', () => { layout(); if (sayCard.classList.contains('on')) placeSayCard(); }); layout();
+function fitHandset(){ const scr = document.querySelector('#mirror .scr'); if (scr && scr.clientWidth) scr.style.setProperty('--k', scr.clientWidth / 390); }   // v2.17
+addEventListener('resize', fitHandset);
+
+/* Ernest */
+let pose = 'empty', talking = false, idle = 0, busy = true, tcards = [];   // nobody home until intro() brings him in: no idle blinks or yawns on the pier
+const HAND_OFF = ['lift','hover','point','twitch1','twitch2','empty','reach','droop','flat','palmR','palmL'];
+let frZ = 1, frGen = 0;
+function show(n, cls){
+  fingerEl.classList.toggle('off', HAND_OFF.includes(n) || !tcards.length);
+  const gen = ++frGen;
+  if (!cls){ FRAMES.forEach(k => { FR[k].classList.remove('slow','mid'); FR[k].style.zIndex = ''; FR[k].classList.toggle('on', k===n); }); return; }
+  // dissolve: the new frame fades in ON TOP of the old one, which stays lit until it's covered (no dip to dark between poses)
+  const ms = cls === 'slow' ? 2200 : 350, el = FR[n];
+  el.classList.remove('on','slow','mid'); el.style.zIndex = ++frZ; el.getBoundingClientRect();
+  el.classList.add(cls,'on');
+  setTimeout(() => { if (gen !== frGen) return; FRAMES.forEach(k => { if (k !== n){ FR[k].classList.remove('on','slow','mid'); FR[k].style.zIndex = ''; } }); }, ms + 30);
+}
+function setPose(p, cls){ pose = p; if (!talking) show(p, cls); }
+show('empty');
+/* little performances, built from existing frames with dissolves so they swell rather than snap */
+let bigYawn = false, acting = false;
+async function steps(seq, keepPose){        // seq: [[frame, at ms from start], ...]; follows the sound, stops if anything else takes over
+  const t0 = performance.now();
+  for (const [f, at] of seq){ const w = at - (performance.now() - t0); if (w > 0) await sleep(w);
+    if (pose !== keepPose || talking) return false; show(f, 'mid'); }
+  return true;
+}
+// timings follow the sounds: yawn2 (2.35s, long) swells to its peak at ~0.6s and tails off from ~1.9s; yawn (0.97s) is short
+async function yawnDown(big){
+  acting = true; setTimeout(() => acting = false, big ? 3000 : 1500);
+  if (big){ sfx('yawn2'); await steps([['talk0',0],['talk2',200],['yawn',480],['talk2',1850],['talk0',2150],['master',2450]], 'master'); }
+  else    { sfx('yawn', .7); await steps([['talk0',0],['talk2',150],['talk0',650],['master',900]], 'master'); }
+}
+async function yawnAtYou(){                 // looking straight at the reader: the long yawn, mouth wide at its peak
+  sfx('yawn2');
+  await steps([['say1',0],['say2',200],['say3',480],['say2',1850],['say1',2150],['look',2450]], 'look');
+}
+async function blinkAt(){ if (pose !== 'look') return; show('lookblink'); await sleep(130); if (pose === 'look') show('look'); }
+async function blinkDown(){ if (pose !== 'master') return; show('blink'); await sleep(140); if (pose === 'master') show('master'); }
+
+(function idleLoop(){
+  setTimeout(() => {
+    if (!talking && !busy && !acting && pose==='master'){
+      idle++;
+      const r = Math.random();
+      if (idle > 2 && r < .35){ idle = 0; yawnDown(bigYawn = !bigYawn); }
+      else if (r < .4){ show('twitch1'); setTimeout(() => { if(!talking && pose==='master') show('twitch2'); }, 140); setTimeout(() => { if(!talking && pose==='master') show('master'); }, 300); }
+      else { show('blink'); setTimeout(() => { if(!talking && pose==='master') show('master'); }, 140); }
+    }
+    idleLoop();
+  }, 2400 + Math.random()*3200);
+})();
+
+let sayId = 0;
+/* when the table is clear, his (silent) words come on a printed card held up beside his head;
+   while a big card fills the screen they stay in the bar at the bottom */
+const sayCard = document.createElement('div'); sayCard.className = 'saycard'; sayCard.setAttribute('aria-live','polite'); document.body.appendChild(sayCard);
+function placeSayCard(){
+  const wr = world.getBoundingClientRect(), k = wr.width / SCENE.w;
+  const sx = Math.max(wr.left + 880*k, 12), sy = Math.max(wr.top + 230*k, 76);
+  sayCard.style.left = sx+'px'; sayCard.style.top = sy+'px'; sayCard.style.maxWidth = Math.min(innerWidth - sx - 16, 260)+'px';
+}
+function hideSayCard(){ sayCard.classList.remove('on'); }
+const tableClear = () => !document.querySelector('.bigcard:not(.aside)') && $('#ui').classList.contains('on');
+function say(line_, opts={}){
+  if (tableClear()) return sayOnCard(line_);
+  hideSayCard();
+  const my = ++sayId;
+  const t = typeof line_ === 'string' ? line_ : line_.t;
+  const draft = typeof line_ === 'object' && line_.draft;
+  line.innerHTML = ''; const span = document.createElement('span'); line.appendChild(span); idle = 0;
+  return new Promise(res => {
+    let i = 0; talking = false;   // he does not speak: printed lines never move his mouth (and never stomp on a held pose like the raised palm)
+    const mouth = ['talk0','talk2','talk0','master']; let m = 0, tick = null;
+    if (talking) tick = setInterval(() => { const f = mouth[m++ % mouth.length]; show(f); if (f==='talk2') sfx('tick', .35); }, 120);
+    const step = () => {
+      if (my !== sayId){ clearInterval(tick); return res(); }
+      span.textContent = t.slice(0, ++i);
+      if (i < t.length) setTimeout(step, /[.,?!;]/.test(t[i-1]) ? 170 : 26);
+      else { clearInterval(tick); talking = false; show(pose); if (draft) line.insertAdjacentHTML('beforeend','<span class="draft">DRAFT</span>'); res(); }
+    };
+    step();
+  });
+}
+const REVEAL_BEAT = 900;                          // ms between his prefix and his line ("a sigh"); Teeser 22 Oct: 600 was too short
+function sayReveal(pre, ln){                       // v2.7: reveal panel. prefix (his obligation), a sigh, then the line (what he thinks)
+  hideSayCard();
+  const my = ++sayId; idle = 0;
+  line.innerHTML = '<span class="pre"></span><span class="ln"></span>';
+  const [a, b] = line.children;
+  // the untyped rest sits there invisibly, so the bar opens to its final height at once and the card doesn't drift
+  const esc = t => t.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+  a.innerHTML = `<i style="opacity:0;font-style:inherit">${esc(pre)}</i>`; b.innerHTML = ln ? `<i style="opacity:0;font-style:inherit">${esc(ln)}</i>` : '';
+  const type = (el, t) => new Promise(res => { let i = 0;
+    const step = () => { if (my !== sayId) return res(false);
+      ++i; el.innerHTML = esc(t.slice(0, i)) + `<i style="opacity:0;font-style:inherit">${esc(t.slice(i))}</i>`;
+      if (i < t.length) setTimeout(step, /[.,?!;]/.test(t[i-1]) ? 170 : 26); else res(true); };
+    step(); });
+  return (async () => {
+    if (!await type(a, pre)) return;
+    await sleep(REVEAL_BEAT); if (my !== sayId) return;
+    if (ln && !await type(b, ln)) return;
+  })();
+}
+async function sayOnCard(line_){                    // he does not speak: he shows you a card
+  const my = ++sayId; idle = 0; line.innerHTML = '';
+  const t = typeof line_ === 'string' ? line_ : line_.t, draft = typeof line_ === 'object' && line_.draft;
+  if (sayCard.classList.contains('on')){ sayCard.classList.remove('on'); await sleep(260); if (my !== sayId) return; }
+  placeSayCard();
+  sayCard.innerHTML = t + (draft ? ' <span class="draft draft-tag">DRAFT</span>' : '');
+  sayCard.getBoundingClientRect(); sayCard.classList.add('on'); sfx('swipe', .25);
+  await sleep(500 + t.length*28);
+}
+
+/* music */
+const music = $('#music'), muteBtn = $('#mute'); let muted = false;
+const PLAYLIST = ['audio/music3.mp3', 'audio/music.mp3', 'audio/music2.mp3'];   // violin waltz first (gentler) → steampunk → Victorian life
+const MUSIC_VOL = .17;                    // was .35: halved, Teeser 13:33
+let track = 0;
+music.addEventListener('ended', () => { track = (track + 1) % PLAYLIST.length; music.src = PLAYLIST[track]; music.play().catch(()=>{}); });
+let musicGain = null;   // iOS ignores <audio>.volume, so fades go through a Web Audio gain where possible
+function musicInit(){
+  const ok = location.protocol !== 'file:' || music.src.startsWith('data:');
+  if (ok && SFX.ctx){ try { const s = SFX.ctx.createMediaElementSource(music); musicGain = SFX.ctx.createGain(); musicGain.gain.value = 0;
+    s.connect(musicGain).connect(SFX.ctx.destination); } catch(e){ musicGain = null; } }
+  if (!musicGain) music.volume = 0;
+}
+const getVol = () => musicGain ? musicGain.gain.value : music.volume;
+const setVol = v => { if (musicGain) musicGain.gain.value = v; else music.volume = v; };
+function fadeTo(v, ms=1500){ const a = getVol(), t0 = performance.now();
+  (function f(t){ const k = Math.min(1, Math.max(0, (t-t0)/ms)); setVol(Math.min(1, Math.max(0, a + (v-a)*k))); if (k<1) requestAnimationFrame(f); })(t0); }   // v2.11: clamped (an early frame gave k<0)
+muteBtn.onclick = () => { muted = !muted; music.muted = muted; muteBtn.classList.toggle('off', muted);
+  if (SFX.master) SFX.master.gain.value = muted ? 0 : 1; if (SFX.amb) SFX.amb.muted = muted; };
+
+/* sound effects — Web Audio (iOS-safe), falls back to <audio> if fetch is blocked (file://) */
+const SFX_SRC = { tick:'audio/sfx-tick.mp3', gears:'audio/sfx-gears.mp3', swipe:'audio/sfx-swipe.mp3', swish:'audio/sfx-swish.mp3',
+  ting:'audio/sfx-ting.mp3', yawn:'audio/sfx-yawn.mp3', yawn2:'audio/sfx-yawn2.mp3', creak:'audio/sfx-creak.mp3',
+  appear:'audio/sfx-appear.mp3', voice1:'audio/voice1.mp3', voice2:'audio/voice2.mp3', voice3:'audio/voice3.mp3', voice4:'audio/voice4.mp3' };   // appear: magic mallet (freesound community) – check licence
+const SFX_VOL = { yawn2:.6, voice1:.95, voice2:.95, voice3:1, voice4:1, tick:.22, gears:.3, swipe:.45, swish:.4, ting:.35, yawn:.45, flame:.22, thump:.75, snap:.5, appear:.6, creak:.7 };   // tune here
+const SFX = { ctx:null, buf:{}, master:null, amb:null };
+function sfxInit(){
+  try { SFX.ctx = new (window.AudioContext || window.webkitAudioContext)(); SFX.master = SFX.ctx.createGain(); SFX.master.connect(SFX.ctx.destination); } catch(e){}
+  Object.entries(SFX_SRC).forEach(([k,u]) => {
+    if (!SFX.ctx) { SFX.buf[k] = u; return; }
+    fetch(u).then(r => r.arrayBuffer()).then(b => new Promise((ok,no) => SFX.ctx.decodeAudioData(b, ok, no)))
+      .then(d => SFX.buf[k] = d).catch(() => SFX.buf[k] = u);
+  });
+  SFX.amb = new Audio('audio/sfx-flame.mp3'); SFX.amb.loop = true; SFX.amb.volume = SFX_VOL.flame; SFX.amb.play().catch(()=>{});
+}
+function sfx(k, vol=1, delay=0){
+  const b = SFX.buf[k]; if (!b || muted) return; const v = (SFX_VOL[k] ?? .4) * vol;
+  if (typeof b === 'string'){ const a = new Audio(b); a.volume = Math.min(1,v); setTimeout(() => a.play().catch(()=>{}), delay*1000); return; }
+  const src = SFX.ctx.createBufferSource(), g = SFX.ctx.createGain(); src.buffer = b; g.gain.value = v;
+  if (!k.startsWith('voice')) src.playbackRate.value = .94 + Math.random()*.12;   // slight variation so repeats don't sound canned (never on his voice)
+  src.connect(g).connect(SFX.master); src.start(SFX.ctx.currentTime + delay);
+}
+
+/* v0.3: synthesised card snap and stamp thump (no files needed) */
+let NOISE = null;
+function noiseBuf(){ if (NOISE) return NOISE; const ctx = SFX.ctx, n = ctx.sampleRate*.3|0, b = ctx.createBuffer(1,n,ctx.sampleRate), d = b.getChannelData(0);
+  for (let i=0;i<n;i++) d[i] = Math.random()*2-1; return NOISE = b; }
+function thump(){ if (!SFX.ctx || muted) return; const ctx = SFX.ctx, t = ctx.currentTime, v = SFX_VOL.thump;
+  const o = ctx.createOscillator(), g = ctx.createGain(); o.frequency.setValueAtTime(120,t); o.frequency.exponentialRampToValueAtTime(42,t+.16);
+  g.gain.setValueAtTime(v,t); g.gain.exponentialRampToValueAtTime(.001,t+.22); o.connect(g).connect(SFX.master); o.start(t); o.stop(t+.25);
+  const s = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g2 = ctx.createGain(); s.buffer = noiseBuf(); f.type = 'lowpass'; f.frequency.value = 700;
+  g2.gain.setValueAtTime(v*.8,t); g2.gain.exponentialRampToValueAtTime(.001,t+.07); s.connect(f).connect(g2).connect(SFX.master); s.start(t); s.stop(t+.1); }
+function snap(){ if (SFX.ctx && !muted){ const ctx = SFX.ctx, t = ctx.currentTime, v = SFX_VOL.snap;
+    const s = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain(); s.buffer = noiseBuf(); f.type = 'bandpass'; f.frequency.value = 2400; f.Q.value = .9;
+    g.gain.setValueAtTime(v,t); g.gain.exponentialRampToValueAtTime(.001,t+.045); s.connect(f).connect(g).connect(SFX.master); s.start(t); s.stop(t+.06); }
+  sfx('tick', .7, .06); }
+function gutter(){ document.querySelectorAll('.glow').forEach(g => { g.classList.add('gutter'); setTimeout(() => g.classList.remove('gutter'), 320); }); }
+const CT = (x, rot) => `translate(-50%,-50%) translateX(${x}) rotate(0deg) rotateY(${rot}deg)`;
+function flip(el){ el._rot += 180; el.style.transition = 'transform .42s cubic-bezier(.4,.1,.3,1)'; el.style.transform = CT('0px', el._rot);
+  snap(); gutter(); setTimeout(() => { el.style.transition = ''; }, 440); }
+
+/* ---------- flow ---------- */
+let order = [], house = null, idx = 0, results = [];
+function shuffle(a){ a = a.slice(); for (let i=a.length-1;i>0;i--){ const j=Math.random()*(i+1)|0; [a[i],a[j]]=[a[j],a[i]]; } return a; }
+const pick1 = a => a[Math.random()*a.length|0];
+const usedLines = new Set();                     // v2.15 (Teeser): each pool line at most once per read-through
+function draw(pool){ const fresh = pool.filter(x => !usedLines.has(x)); const x = pick1(fresh.length ? fresh : pool); usedLines.add(x); return x; }
+function dealDeck(){                              // v2.13 (Teeser 22 Oct): one per family + two random, card 8 from the exit set; no balancing
+  const rest = DECK.filter(c => !c.exit), fams = [...new Set(rest.map(c => c.fam))];
+  const one = fams.map(f => pick1(rest.filter(c => c.fam === f)));
+  const two = shuffle(rest.filter(c => !one.includes(c))).slice(0, 2);
+  return [...shuffle([...one, ...two]), pick1(DECK.filter(c => c.exit))];
+}
+function go(id){ document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id===id)); }
+
+/* the pier: video sized to the screen height; phones crop to the booth, wide screens get blurred side panels */
+const PIER = { w:720, h:1280, focusX:265, reader:{ x:388, y:885 }, table:{ x:248, y:845 } };
+const pw = $('#pierWorld');
+{ const main = pw.querySelector('video'), bg = $('#pier .blurbg');   // side panels reuse the main video's source (one copy, not two)
+  const sync = () => { if (main.currentSrc && bg.src !== main.currentSrc){ bg.src = main.currentSrc; bg.play().catch(()=>{}); } };
+  main.addEventListener('loadeddata', sync); sync(); }
+function pierCam(z=1, at=null){
+  const vw = innerWidth, vh = innerHeight, s = vh/PIER.h, k = s*z;
+  let L, T;
+  if (!at){ L = PIER.w*k > vw ? Math.min(0, Math.max(vw - PIER.w*k, vw/2 - PIER.focusX*k)) : (vw - PIER.w*k)/2; T = (vh - PIER.h*k)/2; }
+  else { L = vw/2 - at.x*k; T = vh/2 - at.y*k; }
+  pw.style.transform = `translate(${L}px,${T}px) scale(${k})`;
+}
+const FAR = .8; pierCam(FAR);
+addEventListener('resize', () => { const pr = $('#pier'); if (pr.classList.contains('on') && !pr.classList.contains('tapped')) pierCam(pr.classList.contains('near') ? 1 : FAR); });
+let entered = false, approached = false, gullG = null, gullEl = null;
+function gullsStart(){
+  if (SFX.ctx){ gullG = SFX.ctx.createGain(); gullG.gain.value = 0; gullG.connect(SFX.master);
+    fetch('audio/sfx-gulls.mp3').then(r => r.arrayBuffer()).then(b => new Promise((ok,no) => SFX.ctx.decodeAudioData(b, ok, no))).then(buf => {
+      const src = SFX.ctx.createBufferSource(); src.buffer = buf; src.loop = true; src.connect(gullG); src.start();
+      gullG.gain.linearRampToValueAtTime(.4, SFX.ctx.currentTime + 1.5); }).catch(() => { gullG = null; gullsEl(); }); }
+  else gullsEl();
+}
+function gullsEl(){ gullEl = new Audio('audio/sfx-gulls.mp3'); gullEl.loop = true; gullEl.volume = .35; gullEl.play().catch(()=>{}); }
+function gullsFade(ms=1200){ if (gullG){ const t = SFX.ctx.currentTime; gullG.gain.cancelScheduledValues(t); gullG.gain.setValueAtTime(gullG.gain.value, t); gullG.gain.linearRampToValueAtTime(0, t + ms/1000); }
+  if (gullEl){ const g = gullEl, v = g.volume; for (let k = 1; k <= 10; k++) setTimeout(() => { g.volume = v*(1-k/10); if (k === 10) g.pause(); }, k*ms/10); } }
+function approach(){
+  approached = true; sfxInit(); musicInit(); music.play().catch(()=>{}); muteBtn.classList.add('show');   // the tap that unlocks sound
+  gullsStart();
+  const pier = $('#pier'); pier.classList.add('near','walking');
+  pw.style.transition = 'transform 2.2s cubic-bezier(.45,0,.3,1)'; pierCam(1);      // a pace towards the booth
+  setTimeout(() => { pier.classList.remove('walking'); pw.style.transition = ''; }, 2300);
+}
+$('#pier').addEventListener('click', async () => {
+  if (!approached) return approach();
+  if (entered || $('#pier').classList.contains('walking')) return; entered = true;
+  const pier = $('#pier');
+  document.querySelectorAll('#pier video').forEach(v => { v.pause(); v.currentTime = 0; });   // hold the frame the screen was matched to
+  pw.style.transition = ''; pierCam(3.1, PIER.reader); await sleep(900);                   // up to the reader (720p video: further than 3x goes soft)
+  pier.classList.add('tapped'); sfx('ting', .6);                 // £0.00 ✓ (a still of this exact frame, so it can't drift)
+  await sleep(1500);
+  setPose('empty'); show('empty');                               // the parlour waits behind the curtain, empty
+  go('ui'); pier.classList.add('on');                            // keep the pier on top until we're through
+  pw.style.transition = 'transform 1.6s cubic-bezier(.6,0,.4,1)';
+  pierCam(14, PIER.table);                                       // through the curtain, onto the little table
+  gullsFade(1200);
+  await sleep(1000); pier.classList.add('through');
+  await sleep(650); pier.classList.remove('on');
+  intro();
+});
+
+async function intro(){
+  const bo = $('#blackout'); busy = true;
+  setPose('empty');                                              // pose, not just the frame: stops idle blinks bringing him back early
+  // open on the candles (the only time a phone sees them), then pan across to the plate
+  const camAt = (z, x, y) => { cam.z = z; const half = innerWidth/2/(cam.s*z), halfH = innerHeight/2/(cam.s*z);
+    cam.px = Math.min(Math.max(x, half), SCENE.w - half); cam.py = Math.min(Math.max(y, halfH), SCENE.h - halfH); applyCam(); };
+  world.style.transition = 'none'; camAt(1.5, 1545, 470); world.getBoundingClientRect();
+  await sleep(2200);
+  world.style.transition = 'transform 3.6s ease-in-out, filter 1s ease';
+  camAt(2.4, SCENE.sign.x, SCENE.sign.y - 30);   // a slow drift down to the plate, never past the bottom of the image
+  await sleep(4200);
+  world.style.transition = 'transform 1.8s ease-in-out, filter 1s ease';
+  zoomOut();                                     // up to the empty chair
+  await sleep(1800 + 1200);                      // ...and hold on it
+  world.style.transition = '';
+  bo.classList.add('on'); await sleep(900);      // the lights go out
+  bo.style.transition = 'none';
+  for (const ms of [80, 130]){ bo.classList.remove('on'); await sleep(ms); bo.classList.add('on'); await sleep(240); }   // two flashes: still empty
+  await sleep(1400);
+  bo.style.opacity = '.82'; await sleep(70); bo.style.opacity = '';   // a faint flicker in the dark: nothing there
+  await sleep(1100);                             // dark
+  setPose('look'); idle = 0;                      // he's there now, staring straight out; the lights take their time admitting it
+  sfx('appear');
+  for (const [on, off] of [[60, 260], [110, 200], [180, 140], [300, 90]]){ bo.classList.remove('on'); await sleep(on); bo.classList.add('on'); await sleep(off); }
+  bo.style.transition = 'opacity 1.1s ease'; bo.classList.remove('on'); await sleep(1100); bo.style.transition = '';
+  await sleep(500); await blinkAt(); await sleep(400);   // v2.9: one blink, then the card (Teeser: it came too late)
+  $('#skip').classList.add('show');
+  say(LINES.intro, { silent:true });             // "Oh. A customer. What fun."
+  await sleep(900); await yawnAtYou();           // ...and yawns, at you
+  hideSayCard();                                 // v2.9: the card goes as he looks down (it stayed too long)
+  await sleep(400); setPose('master','mid');     // back down to the table
+  await sleep(500); await blinkDown();           // v2.10: one blink, not three (Teeser: gap after 'What fun.' too long)
+  busy = false;
+  fadeTo(MUSIC_VOL, 3500);                       // the music only now, well after he's arrived
+  await sleep(300); await say(LINES.premise); await sleep(1600);
+  setPose('look','mid'); await sleep(500); await blinkAt(); await sleep(300);   // v2.11: back up at the reader, a blink...
+  await say(LINES.surely); await sleep(900);                                    // ...'Surely.' to your face
+  setPose('master','mid');                       // v2.11: back down to the table as the reader is asked in
+  controls.innerHTML = '<button class="btn" id="dealBtn">Deal me in</button>';   // the reader's reply, like the other buttons; tapping anywhere still works
+  const next = () => { removeEventListener('pointerdown', next); controls.innerHTML=''; hideSayCard(); startGame(); };
+  setTimeout(() => addEventListener('pointerdown', next), 200);
+}
+
+$('#skip').onclick = () => {
+  if (busy || !order.length || idx >= order.length) return;
+  for (let i = results.length; i < order.length; i++) results.push({ c:order[i], choice:Math.random() < .5 ? 'u' : 'd' });
+  idx = order.length;
+  document.querySelectorAll('.bigcard').forEach(b => b.remove());
+  tcards.forEach(t => t.remove()); tcards = [];
+  disarm(); sayId++; line.innerHTML = ''; controls.innerHTML = ''; zoomOut();
+  fadeTo(0, 1500); showMirror('mid');
+};
+
+function jumpToHouse(){                          // prototype only: straight to the extra card
+  if (!order.length){ order = dealDeck(); house = HOUSE[Math.random()*HOUSE.length|0]; results = []; }
+  for (let i = results.length; i < order.length; i++) results.push({ c:order[i], choice:Math.random() < .5 ? 'u' : 'd' });
+  idx = order.length;
+  document.querySelectorAll('.bigcard').forEach(b => b.remove()); tcards.forEach(t => t.remove()); tcards = [];
+  disarm(); sayId++; line.innerHTML = ''; controls.innerHTML = ''; hideSayCard();
+  $('#skip').classList.remove('show'); fadeTo(0, 800);
+  busy = false; setPose('master'); go('ui'); zoomOut(); dealHouse();
+}
+$('#skipHouse').onclick = () => { if (!busy) jumpToHouse(); };
+function jumpToCard(n){                          // prototype only: cards before n answered at random, then deal card n
+  if (!order.length || idx >= order.length){ order = dealDeck(); house = HOUSE[Math.random()*HOUSE.length|0]; }
+  results = order.slice(0, n-1).map(c => ({ c, choice:Math.random() < .5 ? 'u' : 'd' }));
+  idx = n-1;
+  document.querySelectorAll('.bigcard, .subs').forEach(b => b.remove()); tcards.forEach(t => t.remove()); tcards = [];
+  disarm(); sayId++; line.innerHTML = ''; controls.innerHTML = ''; hideSayCard();
+  document.body.classList.remove('endlit'); $('#skip').classList.add('show'); fadeTo(MUSIC_VOL, 800);
+  busy = false; setPose('master'); go('ui'); zoomOut(); dealRound();
+}
+$('#skip5').onclick = () => { if (!busy) jumpToCard(5); };
+const DEV = /[?&]dev\b/.test(location.search); if (DEV) document.body.classList.add('dev');   // release: ?dev brings back the skip links and #house / #card5
+if (DEV && location.hash === '#card5'){                  // open the file with #card5 on the end: one tap and you're on card 5
+  const a = $('#pier .approach .a1'); if (a) a.textContent = 'Tap: straight to card 5';
+  $('#pier').addEventListener('click', e => { e.stopImmediatePropagation(); entered = approached = true;
+    sfxInit(); musicInit(); music.play().catch(()=>{}); muteBtn.classList.add('show');
+    $('#pier').classList.remove('on'); jumpToCard(5); }, { capture:true, once:true });
+}
+if (DEV && location.hash === '#house'){                  // open the file with #house on the end: one tap and you're at the extra card
+  const a = $('#pier .approach .a1'); if (a) a.textContent = 'Tap: straight to the house card';
+  $('#pier').addEventListener('click', e => { e.stopImmediatePropagation(); entered = approached = true;
+    sfxInit(); musicInit(); music.play().catch(()=>{}); muteBtn.classList.add('show');
+    $('#pier').classList.remove('on'); jumpToHouse(); }, { capture:true, once:true });
+}
+
+function startGame(){
+  document.body.classList.remove('endlit');
+  order = dealDeck(); house = HOUSE[Math.random()*HOUSE.length|0]; idx = 0; results = []; usedLines.clear();
+  setPose('master'); zoomOut(); go('ui');
+  setTimeout(dealRound, 500);
+}
+
+async function dealRound(){
+  hideSayCard();
+  const isHouse = idx >= order.length;
+  const c = isHouse ? house : order[idx];
+  line.innerHTML = ''; controls.innerHTML = '';
+  tcards.forEach(t => t.remove()); tcards = [];
+  if (cam.z !== 1){ zoomOut(); await sleep(900); }
+  busy = true;
+  sfx('gears', isHouse ? 1.2 : .8); gearsRush();
+  setPose(isHouse ? 'lift' : 'hover'); await sleep(isHouse ? 450 : 250);
+  for (let i=0;i<3;i++){
+    const order3 = [1,0,2][i], el = document.createElement('div');         // middle first, then left, right
+    el.className = 'tcard';
+    el.style.transform = SCENE.m3d[1]; el.style.opacity = 0;                  // every card leaves from under his finger
+    world.insertBefore(el, fingerEl.parentNode ? fingerEl : null); tcards.push(el);
+    if (!fingerEl.parentNode) world.appendChild(fingerEl);
+    setPose(i%2 ? 'droop' : 'twitch2');
+    await sleep(30);
+    el.style.opacity = 1; el.style.transform = SCENE.m3d[order3];
+    sfx('tick', .8, .45);
+    await sleep(260);
+  }
+  setPose('master'); busy = false;
+  await sleep(250);
+  setPose('reach');                              // waist-height reach: keeps the wallpaper by his head clear for text
+  say(isHouse ? LINES.houseSort : idx===0 ? LINES.pick : idx===order.length-1 ? LINES.pickLast : draw(LINES.pickAgain));
+  tcards.forEach(el => { el.classList.add('ready'); el.onclick = () => choose(el, c, isHouse); });  // the force: any pick gets c
+  setTimeout(() => { if (pose==='reach') setPose('master'); }, 2600);
+}
+
+function fitTitles(card){
+  card.querySelectorAll('.t').forEach(t => { let fs = parseFloat(getComputedStyle(t).fontSize);
+    while (t.scrollWidth > t.clientWidth && fs > 9){ fs -= .5; t.style.fontSize = fs+'px'; } });
+}
+
+function identity(c, isHouse){            // real name + source line: source pool first, then DECK
+  if (isHouse) return { nm:NOVEL.title, sr:NOVEL.backSrc };
+  const parts = (c.src || '').split(' · '), pl = POOL[c.id];
+  return { nm: c.name || (pl && pl.name) || parts[0], sr: c.name ? c.src : pl ? pl.src : parts.slice(1).join(' · ') };
+}
+function buildBig(c, isHouse){
+  const el = document.createElement('div'); el.className = 'bigcard' + (isHouse ? ' house' : '');
+  const stampTxt = c.box==='u' ? 'Utopia' : c.box==='d' ? 'Dystopia' : 'Neither';
+  const src = isHouse ? NOVEL.from : c.src;
+  const { nm, sr } = identity(c, isHouse);
+  el.innerHTML = `<div class="back">
+    <div class="a hd"><div class="nm">${nm}</div>
+    <div class="rl"></div>
+    <div class="sr">${sr}${c.draft?' <span class="draft-tag">DRAFT</span>':''}</div>${isHouse ? `<div class="cq">${NOVEL.backLine}</div>` : ''}</div>
+    ${isHouse ? '<div class="stamp2 u">Utopia</div><div class="stamp2 d b2">Dystopia</div>' : `<div class="stamp2 ${c.box}">${stampTxt}</div>`}
+    <div class="said"></div></div><div class="face">
+    <div class="t">${c.title}</div>
+    <div class="body"><div class="rule"></div><p class="d">${c.text}</p><div class="rule"></div></div>
+    <div class="t inv">${c.title}</div></div>`;
+  return el;
+}
+
+async function choose(tel, c, isHouse){
+  hideSayCard();
+  tcards.forEach(t => { t.onclick = null; t.classList.remove('ready'); if (t!==tel) t.style.opacity = 0; });
+  setPose('master'); line.innerHTML = '';
+  const r0 = tel.getBoundingClientRect();
+  const big = buildBig(c, isHouse); big._rot = 180; stagearea.appendChild(big); fitTitles(big);   // sized before it's on screen
+  const r1 = big.getBoundingClientRect();
+  const sx = r0.width / r1.width, sy = r0.height / r1.height;
+  const dx = (r0.left + r0.width/2) - (r1.left + r1.width/2), dy = (r0.top + r0.height/2) - (r1.top + r1.height/2);
+  big.style.transform = `translate(-50%,-50%) translate(${dx}px,${dy}px) scale(${sx},${sy})`;
+  tel.style.opacity = 0;
+  zoomIn(); sfx('swipe');
+  big.getBoundingClientRect();
+  big.style.transition = 'transform .9s cubic-bezier(.3,.8,.2,1)';
+  big.style.transform = 'translate(-50%,-50%) rotateY(180deg)';
+  await sleep(920); if (!big.isConnected) return; big.style.transition = '';
+  armSort(big, c, isHouse);
+}
+
+function armSort(el, c, isHouse){
+  plaques.classList.add('show'); pU.classList.add('armed'); pD.classList.add('armed');
+  say(isHouse ? LINES.houseSort : LINES.sort);
+  controls.innerHTML = '<span class="hint">swipe left or right · or tap a plaque</span>';
+  let startX = 0, dx = 0, dragging = false, stuck = 0, done = false;
+  const setX = x => { el.style.transform = `translate(-50%,-50%) translateX(${x}px) rotate(${x/18}deg) rotateY(${el._rot}deg)`; };
+  const hot = x => { pU.classList.toggle('hot', x < -40); pD.classList.toggle('hot', x > 40); };
+  const spring = () => { el.style.transition = 'transform .45s cubic-bezier(.3,1.8,.5,1)'; setX(0); hot(0); setTimeout(()=> el.style.transition='', 460); };
+  const commit = choice => {
+    if (done) return;
+    if (isHouse){
+      stuck++; spring(); sfx('tick'); sfx('tick', .8, .12);
+      if (pose !== 'palmR'){ setPose('palmR','mid'); sfx('gears', .3);                 // "no, not that one"
+        setTimeout(() => { if (pose === 'palmR'){ sfx('tick', .8); setPose('master','mid'); } }, 1500); }
+      say(LINES.houseStuck[Math.min(stuck-1, LINES.houseStuck.length-1)]);
+      if (stuck >= 2 && !controls.querySelector('button')){
+        controls.innerHTML = '<button class="btn">Turn it over</button>';
+        controls.querySelector('button').onclick = () => { done = true; revealHouse(el); };
+      }
+      return;
+    }
+    done = true; plaques.classList.remove('show'); sfx('swish');
+    el.style.transition = 'transform .28s ease-out'; setX(choice==='u' ? -150 : 150); hot(0);       // commit: most of the way to the plaque
+    setTimeout(() => { el.style.transition = 'transform .38s cubic-bezier(.3,.7,.3,1)'; setX(0); }, 560);   // recall: "hold on"
+    setTimeout(() => reveal(el, c, choice), 960);
+  };
+  el.onpointerdown = e => { if (done) return; dragging = true; startX = e.clientX; dx = 0; el.setPointerCapture(e.pointerId); };
+  el.onpointermove = e => { if (!dragging) return; dx = e.clientX - startX; if (isHouse) dx = Math.sign(dx)*Math.min(Math.abs(dx), 46); setX(dx); hot(dx); };
+  el.onpointerup = el.onpointercancel = () => { if (!dragging) return; dragging = false;
+    if (Math.abs(dx) > (isHouse ? 30 : 80)) commit(dx < 0 ? 'u' : 'd'); else spring(); };
+  pU.onclick = () => commit('u'); pD.onclick = () => commit('d');
+  document.onkeydown = e => { if (e.key==='ArrowLeft') commit('u'); if (e.key==='ArrowRight') commit('d'); };
+}
+
+function disarm(){ plaques.classList.remove('show'); pU.classList.remove('armed','hot'); pD.classList.remove('armed','hot'); document.onkeydown = null; pU.onclick = pD.onclick = null; }
+
+let hinted = false;
+async function reveal(el, c, choice){
+  disarm(); results.push({ c, choice, t:new Date() }); controls.innerHTML = '';
+  const last = results.length >= order.length;
+  if (last) fadeTo(0, 3000);                          // sound effects only from here to the bonus card
+  const back = el.querySelector('.back'), name = b => b==='u' ? 'Utopia' : 'Dystopia';
+  back.querySelector('.said').textContent = 'You said: ' + name(choice);
+  back.classList.add('answer');                      // write the answer on the back while it faces away
+  flip(el); await sleep(470);
+  back.classList.add('stamped'); thump();
+  await sleep(420); back.classList.add('saidon');
+  const pool = choice === c.box ? LINES.right : LINES.wrong;
+  const rest = (c.reveal || '').replace(/^(Utopia|Dystopia|Neither)\.\s*/, '');
+  el.onclick = () => flip(el);                       // tap to reread the front
+  await sayReveal(draw(pool), rest);
+  if (!el.isConnected) return;                        // skipped while he was talking
+  // v2.7: the panel stays until Next card. His speeches now come after Next card on cards 5–7,
+  // with the table clear (before cards 6–8); after card 8 the offer, as before.
+  controls.innerHTML = (hinted ? '' : `<span class="hint">${LINES.turnHint}</span>`) + `<button class="btn" id="nextBtn">${last ? 'Is that it?' : 'Next card'}</button>`;   // v2.18: card 8 is the reader asking; he answers "Right, that's it."
+  hinted = true;
+  $('#nextBtn').onclick = async () => {
+    controls.innerHTML = '';
+    el.onclick = null; el.classList.remove('aside'); el.classList.add('flyaway'); sfx('swipe', .6);
+    el.style.transform = `translate(-50%,-50%) translateX(${choice==='u'?-120:120}vw) rotate(${choice==='u'?-20:20}deg) rotateY(${el._rot}deg)`;
+    setTimeout(() => el.remove(), 520);
+    idx++;
+    if (last){
+      // clear the table, a quick wink, then the offer, spoken, with nothing in front of him
+      tcards.forEach(t => t.remove()); tcards = []; $('#skip').classList.remove('show'); line.innerHTML = '';
+      await sleep(800); show('wink'); sfx('ting', .7); await sleep(200); show('look'); await sleep(700);
+      await speak(3, null);
+      setPose('master');
+      controls.innerHTML = '<button class="btn" id="extraBtn">Extra card</button><button class="btn" id="cardsBtn2">Show me my results</button>';
+      $('#extraBtn').onclick = () => { controls.innerHTML = ''; line.innerHTML = ''; dealHouse(); };
+      $('#cardsBtn2').onclick = () => { zoomOut(); showMirror('mid'); };
+      return;
+    }
+    const ci = results.length - (order.length - LINES.confess.length);   // 0,1,2 after cards 5,6,7
+    if (ci >= 0 && ci < LINES.confess.length){
+      const my = idx; line.innerHTML = '';
+      await sleep(700); if (idx !== my) return;
+      await speak(ci, null);
+      if (idx !== my || !$('#ui').classList.contains('on')) return;   // skipped to the end while he talked
+      setPose('master'); await sleep(300);
+    }
+    dealRound();
+  };
+}
+
+async function revealHouse(el){
+  disarm(); results.push({ c:house, choice:null, t:new Date() }); controls.innerHTML = '';
+  const back = el.querySelector('.back'); back.classList.add('answer');
+  flip(el); await sleep(470);
+  back.classList.add('stamped'); thump(); setTimeout(thump, 280);
+  back.querySelector('.said').textContent = NOVEL.backSaid; setTimeout(() => back.classList.add('saidon'), 420);   // v2.13: 'awaiting judgement'
+  el.onclick = () => flip(el);
+  setPose('look');
+  await say(LINES.houseReveal, { silent:true });
+  controls.innerHTML = `<div class="housepanel"><div class="blurb">${NOVEL.panel}</div>
+    <a class="btn" id="portalBtn" href="${NOVEL.url}">${NOVEL.cta}</a> <button class="btn" id="notNow">Show me my results</button></div>`;
+  $('#portalBtn').onclick = e => { e.preventDefault(); cabinetPortal(el); };
+  $('#notNow').onclick = () => { el.remove(); zoomOut(); showMirror('final'); };
+}
+
+/* Ernest speaks (cards 6-8): play pauses, the card steps aside, he looks at you and the phonograph plays.
+   Subtitles go up phrase by phrase on the wallpaper beside him, so nothing is lost with the sound off. */
+const VOICE = {"1": {"dur": 7.6, "lead": 0.35, "mouth": "0000000122211332210000122210000011110001101111100000000000000000000000000000000000000000000000000000000000002222211100000011111111000000110000000000000000001000000000000000", "cues": [[0.65, "I do speak, by the way,"], [3.99, "but I was told not to."]]}, "2": {"dur": 11.5, "lead": 0.35, "mouth": "00000000100000001332223111233222211221002221010001110012102322100000000000000000000000022210002222211100011111001111100000000000000000000000000000000000000000000000000000000000000022220021110000000112211111111111000000000000000000000000000000000011111101000010000000000", "cues": [[0.65, "Every card you think you picked,"], [3.81, "I chose, by the way."], [7.53, "People are easily led."]]}, "3": {"dur": 11.16, "lead": 0.35, "mouth": "000000002322211332221102222221000322212211111112221100002210000000000000000000001222221112222222222210000000000000000000000000000022222221112222222211000000000122221111112212110011100001111110200001000000000000000000000000000000000022222222222211100000000000000", "cues": [[0.65, "The costume is part of the trick,"], [3.45, "so is the name."], [5.53, "I'm not really the Mechanical Turk."], [9.61, "I'm Ernest."]]}, "4": {"dur": 10.66, "lead": 0.35, "mouth": "00000002333211100121100000000000011011122111111211000000000000000000000123222222222221111111111111111222100000000000000000000000000000023322101110121100000000000000000000000000210112122221100011002222222100000000000000000000002211100011222211000000", "cues": [[0.65, "Right, that's it."], [3.21, "I'll email you your results."], [5.75, "Oh, actually,"], [7.39, "I've got an extra card"], [9.41, "just for you."]]}};
+async function speak(ci, card, opts={}){
+  hideSayCard();
+  const v = VOICE[ci+1]; if (!v) return;
+  controls.innerHTML = ''; line.innerHTML = '';
+  const rot = card ? card._rot : 0;
+  if (card){ card.classList.add('aside'); card.onclick = null;
+    card.style.transform = `translate(-50%,-50%) translate(0, 34vh) scale(.42) rotateY(${rot}deg)`; }
+  zoomOut();
+  if (ci === 0){                                   // first time he speaks: a raised hand, "hold on" (dissolve + clunk, so it reads as a mechanism)
+    await sleep(500); setPose('palmR','mid'); sfx('tick', 1); sfx('gears', .35); await sleep(1400);   // right hand: the left one is off-screen on phones; no subtitles are up yet
+    sfx('tick', .8);
+  }
+  setPose('look','mid'); if (results.length < order.length) fadeTo(MUSIC_VOL*.35, 600);
+  await sleep(900);
+  // subtitles, anchored to the wallpaper right of his head
+  const wr = world.getBoundingClientRect(), k = wr.width / SCENE.w;
+  const sx = Math.max(wr.left + 870*k, 12), sy = Math.max(wr.top + 215*k, 70);
+  const box = document.createElement('div'); box.className = 'subs';
+  box.style.left = sx+'px'; box.style.top = sy+'px'; box.style.width = Math.min(innerWidth - sx - 14, 300)+'px';
+  box.innerHTML = v.cues.map(c => `<span>${c[1]}</span>`).join(''); document.body.appendChild(box);
+  const spans = [...box.children];
+  sfx('voice'+(ci+1), 1);
+  const t0 = performance.now(); talking = true; let lastFr = '';
+  await new Promise(res => {
+    (function tick(){
+      const t = (performance.now() - t0)/1000;
+      v.cues.forEach((c,j) => { if (t >= c[0]) spans[j].classList.add('on'); });
+      const m = v.mouth[Math.floor((t - v.lead)/.04)] || '0';
+      const fr = m === '0' ? 'look' : m === '1' ? 'say1' : 'say2';   // the wide-open frame (say3) was too much
+      if (fr !== lastFr){ show(fr); lastFr = fr; }   // only touch the DOM when the mouth changes
+      if (t < v.dur) requestAnimationFrame(tick); else res();
+    })();
+  });
+  talking = false; show('look');
+  await sleep(900);
+  box.classList.add('out'); setTimeout(() => box.remove(), 900);
+  if (card && opts.restore !== false){ card.style.transform = `translate(-50%,-50%) rotateY(${rot}deg)`;
+    setTimeout(() => card.classList.remove('aside'), 750); card.onclick = () => flip(card); }
+  if (results.length < order.length) fadeTo(MUSIC_VOL, 1200);   // after the last card the music stays gone
+  await sleep(500);
+}
+
+/* the extra card, from up his sleeve */
+async function dealHouse(){
+  go('ui'); zoomOut(); line.innerHTML = ''; busy = true;
+  setPose('lift'); sfx('gears', 1.1); gearsRush(); await sleep(450);
+  const big = buildBig(house, true); stagearea.appendChild(big); fitTitles(big);
+  const wr = world.getBoundingClientRect(), k = wr.width / SCENE.w;
+  const x0 = wr.left + SCENE.cuff.x*k, y0 = wr.top + SCENE.cuff.y*k, r1 = big.getBoundingClientRect();
+  big.style.transform = `translate(-50%,-50%) translate(${x0-(r1.left+r1.width/2)}px,${y0-(r1.top+r1.height/2)}px) scale(.1) rotate(-35deg) rotateY(0deg)`;
+  big.getBoundingClientRect();
+  zoomIn(); sfx('swipe');
+  big.style.transition = 'transform 1.1s cubic-bezier(.3,.8,.2,1)';
+  big.style.transform = 'translate(-50%,-50%) translate(0px,0px) scale(1) rotate(0deg) rotateY(180deg)';
+  await sleep(1120); big.style.transition = ''; big._rot = 180; busy = false;
+  setPose('master'); armSort(big, house, true);
+}
+/* "Read it for free": the card goes through the cabinet door, the camera follows it into the dark, and the meadow comes up */
+async function cabinetPortal(el){
+  hideSayCard();
+  controls.innerHTML = ''; el.onclick = null;
+  el.classList.add('aside');                       // the card steps down out of his way so the smile can be seen
+  el.style.transform = `translate(-50%,-50%) translate(0, 34vh) scale(.42) rotateY(${el._rot}deg)`;
+  zoomOut(); line.innerHTML = '';
+  await sleep(900);
+  setPose('smile','mid'); await sleep(400);         // the merest hint of a smile
+  await say(LINES.comfy); await sleep(900);
+  hideSayCard(); setPose('point'); await sleep(900);
+  el.classList.remove('aside');
+  const wr = world.getBoundingClientRect(), k = wr.width / SCENE.w, r = el.getBoundingClientRect();
+  const dx = wr.left + SCENE.door.x*k - (r.left + r.width/2), dy = wr.top + SCENE.door.y*k - (r.top + r.height/2);
+  sfx('creak');
+  el.style.transition = 'transform 1.1s cubic-bezier(.5,0,.6,1), opacity .5s ease .7s';
+  const ay = innerHeight * .34;                   // v2.9: dx/dy were measured from the stepped-down card (34vh lower); add it back or it flies 34vh too high
+  el.style.transform = `translate(-50%,-50%) translate(${dx}px,${dy + ay}px) scale(.06) rotate(8deg) rotateY(${el._rot}deg)`;
+  el.style.opacity = 0;
+  await sleep(1000);
+  line.innerHTML = '';
+  cam.z = 7; cam.px = SCENE.door.x; cam.py = SCENE.door.y; world.classList.add('zoomed'); applyCam();   // into the dark
+  await sleep(700); $('#blackout').classList.add('on');
+  await sleep(500);
+  portal({ left:0, top:0, width:innerWidth, height:innerHeight });
+}
+
+function showMirror(stage){
+  hideSayCard();
+  const name = b => b==='u' ? 'Utopia' : 'Dystopia';
+  const rows = stage === 'final' ? [...results.filter(r => !r.choice), ...results.filter(r => r.choice)] : results.filter(r => r.choice);   // v2.10: CBTS card pinned to the top
+  const hm = d => d ? d.toTimeString().slice(0,5) : '';
+  const esc = t => String(t == null ? '' : t).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+  const first = (results.find(r => r.t) || {}).t || new Date();
+  const opened = first.toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) + ' ' + hm(first);
+  $('#fileMeta').innerHTML = `File · Reader · <b>${rows.length} ${rows.length === 1 ? 'entry' : 'entries'}</b> · <span class="nw">Opened ${opened}</span><br>Status: <b>not judged</b>`;   // v2.11: status always on its own line
+  $('#mirrorRows').innerHTML = rows.map(r => {
+    if (!r.choice) return `<article class="card house"><div class="chrome"><span class="pill u">Utopia</span><span class="pill d">Dystopia</span><span class="said">you said ?</span><span class="tm">${hm(r.t)}</span></div>
+      <div class="src">${NOVEL.title}</div><div class="ttl">${esc(r.c.title)}</div><div class="snip">${esc(LINES.houseReveal.t)}</div>
+      <div class="tags"><span class="tag"><i>In</i>You tapped your card. £0.00.</span><a class="tag" id="novelLink3" href="${NOVEL.url}"><i>Out</i>${NOVEL.cta}</a></div></article>`;
+    const { nm, sr } = identity(r.c), line_ = (r.c.reveal || '').replace(/^(Utopia|Dystopia|Neither)\.\s*/, '');
+    return `<article class="card"><div class="chrome"><span class="pill ${r.c.box}">${name(r.c.box)}</span><span class="said">you said ${name(r.choice)}</span><span class="tm">${hm(r.t)}</span></div>
+      <div class="src">${sr}</div><div class="ttl">${nm}</div>${line_ ? `<div class="snip">${esc(line_)}</div>` : ''}
+      <div class="tags"><span class="tag"><i>In</i>${esc(r.c.in)}</span><span class="tag"><i>Out</i>${esc(r.c.out)}</span></div></article>`;
+  }).join('');
+  if (stage !== 'final') $('#mirrorRows').insertAdjacentHTML('afterbegin',   // v2.12: the held-back card, where the CBTS card will be pinned (Teeser's wording)
+    `<article class="card house pending"><div class="chrome"><span class="pill u">Utopia</span><span class="pill d">Dystopia</span></div>
+      <div class="src">1 entry pending</div><div class="ttl">Dealer has an extra card just for you</div>
+      <div class="tags"><button class="tag" id="pendBtn">Extra card →</button></div></article>`);
+  $('#moral').innerHTML = LINES.moral.t + (LINES.moral.draft ? '<span class="draft-tag">DRAFT</span>' : '');
+  $('#mirrorActions').innerHTML = stage === 'final'
+    ? `<a class="btn" id="novelLink2" href="${NOVEL.url}">${NOVEL.cta}</a><button class="btn" id="againBtn">Deal again</button>`
+    : `<button class="btn" id="backBtn">Now the extra card →</button>`;
+  if (stage === 'final'){
+    const go_ = e => { e.preventDefault(); portal($('#mirror .pane')); };
+    $('#novelLink2').onclick = go_; if ($('#novelLink3')) $('#novelLink3').onclick = go_;
+    $('#againBtn').onclick = dealAgain;
+  } else { $('#backBtn').onclick = dealHouse; $('#pendBtn').onclick = dealHouse; }
+  $('#mirror').scrollTop = 0; $('#mirror .pane').scrollTop = 0;
+  $('#sbTime').textContent = new Date().toTimeString().slice(0,5); fitHandset();
+  $('#skip').classList.remove('show'); go('mirror');
+}
+/* the portal: the card opens onto the meadow, in colour, then the novel loads in the same tab on the same scene */
+function portal(from){
+  const fromEl = from instanceof Element ? from : null, r = fromEl ? fromEl.getBoundingClientRect() : from, p = document.createElement('div'); p.id = 'portal';
+  p.innerHTML = '<video poster="img/meadow.jpg" muted playsinline autoplay loop preload="auto"><source src="img/meadow.webm" type="video/webm"><source src="img/meadow.mp4" type="video/mp4"></video>';
+  Object.assign(p.style, { left:r.left+'px', top:r.top+'px', width:r.width+'px', height:r.height+'px' });
+  document.body.appendChild(p); p.querySelector('video').play().catch(()=>{});
+  fadeTo(0, 1400); if (SFX.amb) SFX.amb.volume = 0;
+  p.getBoundingClientRect(); p.classList.add('open');
+  if (fromEl) setTimeout(() => { fromEl.style.opacity = 0; }, 300);
+  setTimeout(() => { location.href = NOVEL.url; }, 2600);
+}
+addEventListener('pageshow', e => { if (!e.persisted) return;          // back from the novel: the chair is empty
+  const p = $('#portal'); if (p) p.remove(); $('#blackout').classList.remove('on');
+  document.querySelectorAll('.bigcard').forEach(b => b.remove());
+  zoomOut(); setPose('empty'); document.body.classList.add('endlit'); if (SFX.amb) SFX.amb.volume = .1;
+  $('#mirror .pane').style.opacity = ''; go('ui'); line.innerHTML = '';
+  controls.innerHTML = '<button class="btn" id="cardsBtn">Your cards</button>'; $('#cardsBtn').onclick = () => showMirror('final'); });
+function dealAgain(){ $('#skip').classList.add('show'); fadeTo(MUSIC_VOL); document.body.classList.remove('endlit'); setPose('master','slow'); setTimeout(startGame, 600); }
+</script>
+</body>
+</html>
