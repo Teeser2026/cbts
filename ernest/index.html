@@ -233,12 +233,13 @@ body:not(.dev) #skip,body:not(.dev) #skipHouse,body:not(.dev) #skip5{display:non
 .housepanel .blurb{font-style:italic;color:var(--paper);font-size:18px;line-height:1.35;margin:.1em 0 .8em}
 
 /* Your Cards, v2.9: a file in the CBTS feed's styling (tokens from CBTS index.html, phase-1 right pane) */
-#mirror{justify-content:flex-start;align-items:center;overflow-y:auto;-webkit-overflow-scrolling:touch;background:rgba(5,3,2,.6);padding:0}
+#mirror{justify-content:flex-start;align-items:center;overflow-y:auto;overscroll-behavior:contain;background:rgba(5,3,2,.6);padding:0}
 #mirror .pane{--bg:#1a1a1e;--text:#C8C4BC;--dim:#706C66;--bright:#E0DCD4;--card:#1E1E22;--card-b:#2A282E;--inner:#7A5D3A;
   width:100%;max-width:480px;flex:none;min-height:100%;background:var(--bg);color:var(--text);padding:0 12px max(28px,env(safe-area-inset-bottom));box-shadow:0 0 60px #000;
   transform:translateY(100%);transition:transform .6s cubic-bezier(.2,.8,.2,1)}
 #mirror.on .pane{transform:none}
-#mirror .handset,#mirror .scr{display:contents}
+#mirror .handset,#mirror .scr{display:flex;flex-direction:column;align-items:center;width:100%;flex:1 0 auto}   /* v2.42: was display:contents, which kills touch scrolling on iOS */
+#mirror .scr>.pane{flex:1 0 auto;min-height:0}
 #mirror .hand,#mirror .notch,#mirror .sbar{display:none}
 @media (min-width:700px) and (min-height:560px){
   #mirror{overflow:hidden;justify-content:center}
@@ -872,7 +873,7 @@ function jumpToCard(n){                          // prototype only: cards before
   busy = false; setPose('master'); go('ui'); zoomOut(); dealRound();
 }
 $('#skip5').onclick = () => { if (!busy) jumpToCard(5); };
-const DEV = /[?&]dev\b/.test(location.search); if (DEV) document.body.classList.add('dev');   // build v2.39 (sound levels)
+const DEV = /[?&]dev\b/.test(location.search); if (DEV) document.body.classList.add('dev');   // build v2.45 (iPhone Your Cards scroll fixed)
 if (/[?&]gears\b/.test(location.search)) document.body.classList.add('gears');   // v2.23: outline the gear cut-outs, tint the cabinet front   // release: ?dev brings back the skip links and #house / #card5
 if (DEV && location.hash === '#card5'){                  // open the file with #card5 on the end: one tap and you're on card 5
   const a = $('#pier .approach .a1'); if (a) a.textContent = 'Tap: straight to card 5';
@@ -1122,6 +1123,7 @@ async function speak(ci, card, opts={}){
 
 /* the extra card, from up his sleeve */
 async function dealHouse(){
+  document.querySelectorAll('.bigcard').forEach(b => b.style.visibility = '');   // v2.40
   go('ui'); zoomOut(); line.innerHTML = ''; busy = true;
   setPose('lift'); sfx('gears', 1.1); gearsRush(); await sleep(450);
   const big = buildBig(house, true); stagearea.appendChild(big); fitTitles(big);
@@ -1164,6 +1166,7 @@ async function cabinetPortal(el){
 
 function showMirror(stage){
   hideSayCard();
+  document.querySelectorAll('.bigcard').forEach(b => b.style.visibility = 'hidden');   // v2.40: iOS lets the 3D card's touch-action:none leak through Your Cards
   const name = b => b==='u' ? 'Utopia' : 'Dystopia';
   const rows = stage === 'final' ? [...results.filter(r => !r.choice), ...results.filter(r => r.choice)] : results.filter(r => r.choice);   // v2.10: CBTS card pinned to the top
   const hm = d => d ? d.toTimeString().slice(0,5) : '';
@@ -1196,6 +1199,7 @@ function showMirror(stage){
   $('#mirror').scrollTop = 0; $('#mirror .pane').scrollTop = 0;
   $('#sbTime').textContent = new Date().toTimeString().slice(0,5); fitHandset();
   $('#skip').classList.remove('show'); go('mirror');
+  setTimeout(() => { const m = $('#mirror'); m.style.overflowY = 'hidden'; void m.offsetHeight; m.style.overflowY = ''; }, 650);   // v2.40: make iOS rebuild the scroll layer once the pane has landed
 }
 /* the portal: the card opens onto the meadow, in colour, then the novel loads in the same tab on the same scene */
 function portal(from){
@@ -1215,6 +1219,30 @@ addEventListener('pageshow', e => { if (!e.persisted) return;          // back f
   $('#mirror .pane').style.opacity = ''; go('ui'); line.innerHTML = '';
   controls.innerHTML = '<button class="btn" id="cardsBtn">Your cards</button>'; $('#cardsBtn').onclick = () => showMirror('final'); });
 function dealAgain(){ $('#skip').classList.add('show'); fadeTo(MUSIC_VOL); document.body.classList.remove('endlit'); setPose('master','slow'); setTimeout(startGame, 600); }
+
+/* v2.44: Your Cards touch-scroll fallback. On Teeser's iPhone, touches reach #mirror but iOS never starts a native scroll
+   (?debug: touchmoves arrive, pointercancel 0, no scroll events). If a swipe gets 3 moves in with no native scroll, drive scrollTop
+   from the finger and carry momentum on release. Any native scroll event first means the browser has it, and this stays out. */
+(function(){
+  const m = document.getElementById('mirror'); if (!m) return;
+  let y0 = 0, t0 = 0, vel = 0, moves = 0, pend = 0, native = false, manual = false, raf = 0;
+  const stop = () => { if (raf) cancelAnimationFrame(raf); raf = 0; };
+  m.addEventListener('scroll', () => { if (!manual) native = true; }, { passive:true });
+  m.addEventListener('touchstart', e => { stop(); const t = e.touches[0]; y0 = t.clientY; t0 = performance.now(); vel = 0; moves = 0; pend = 0; native = false; manual = false; }, { passive:true });
+  m.addEventListener('touchmove', e => {
+    const t = e.touches[0], now = performance.now(), dy = y0 - t.clientY, dt = Math.max(1, now - t0); y0 = t.clientY; t0 = now; moves++;
+    if (native) return;
+    if (!manual){ pend += dy; if (moves < 3) return; manual = true; m.scrollTop += pend; pend = 0; return; }
+    m.scrollTop += dy; vel = .8*(dy/dt) + .2*vel;   // px per ms, smoothed
+  }, { passive:true });
+  m.addEventListener('touchend', () => {
+    if (!manual) return; let v = vel, last = performance.now();
+    const step = now => { const dt = now - last; last = now; m.scrollTop += v*dt; v *= Math.pow(.995, dt);
+      const atEnd = m.scrollTop <= 0 || m.scrollTop >= m.scrollHeight - m.clientHeight - 1;
+      raf = (Math.abs(v) > .02 && !atEnd) ? requestAnimationFrame(step) : 0; };
+    if (Math.abs(v) > .05) raf = requestAnimationFrame(step);
+  }, { passive:true });
+})();
 </script>
 </body>
 </html>
