@@ -18,6 +18,8 @@
 <link rel="canonical" href="https://cantbeatthesystem.com/ernest/">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="prefetch" href="https://cantbeatthesystem.com/">
+<link rel="prefetch" href="https://cantbeatthesystem.com/meadow-poster.webp">
 <link href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&family=Crimson+Pro:ital,wght@0,400;0,600;1,300;1,400&family=Outfit:wght@300;400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 /* ============================================================
@@ -110,7 +112,11 @@ body.endlit #world{filter:brightness(1.05)}
 #pier .veil{position:absolute;inset:0;background:#000;opacity:0;transition:opacity .6s ease;pointer-events:none}
 #pier.through .veil{opacity:1}
 .wallsign{position:absolute;left:540px;top:874px;width:172px;height:80px}
-.gear{position:absolute;pointer-events:none;will-change:transform}
+.gear{position:absolute;pointer-events:none;will-change:transform;transform-origin:50% 50%}
+#mech{position:absolute;inset:0;pointer-events:none;z-index:4000000}   /* v2.25: above the pose frames, whose z-index climbs by one per dissolve (show) */
+.cabfront{position:absolute;pointer-events:none}
+.cabshade{position:absolute;pointer-events:none;background:radial-gradient(ellipse at 20% 15%,rgba(0,0,0,0) 35%,rgba(0,0,0,.38) 100%)}
+body.gears .gear{outline:2px solid #0ff;outline-offset:-2px} body.gears .cabfront{filter:sepia(1) saturate(6) hue-rotate(-50deg)}   /* ?gears: check the cut-outs */
 .smoke{position:absolute;pointer-events:none;background:url(img/smoke.png) 0 0/100% auto repeat-y;mix-blend-mode:screen;
   -webkit-mask-image:radial-gradient(ellipse 50% 100% at 50% 100%,#000 25%,transparent 78%);mask-image:radial-gradient(ellipse 50% 100% at 50% 100%,#000 25%,transparent 78%);
   animation:smokeUp var(--t,26s) linear infinite}
@@ -473,11 +479,44 @@ const SRCS = { master:'img/seat-master.jpg', talk0:'img/seat-talk0.jpg', talk2:'
 FRAMES.forEach(n => { const i = new Image(); i.src = SRCS[n]; i.className = 'frame'; i.alt = ''; world.appendChild(i); FR[n] = i; });
 const fingerEl = new Image(); fingerEl.src = 'img/finger.png'; fingerEl.id = 'finger'; fingerEl.alt = '';
 Object.assign(fingerEl.style, { left:SCENE.finger.x+'px', top:SCENE.finger.y+'px', width:SCENE.finger.w+'px', height:SCENE.finger.h+'px' });
-const GEARS = [ { src:'img/gear2.png', x:1006, y:1036, r:50, dir:-1, period:14 }, { src:'img/gear.png', x:896, y:966, r:64, dir:1, period:20 } ];
-const gearAnims = GEARS.map(g => { const im = new Image(); im.src = g.src; im.className = 'gear'; im.alt = '';
-  Object.assign(im.style, { left:(g.x-g.r)+'px', top:(g.y-g.r)+'px', width:2*g.r+'px', height:2*g.r+'px' }); world.appendChild(im);
-  return im.animate([{ transform:'rotate(0deg)' }, { transform:`rotate(${360*g.dir}deg)` }], { duration:g.period*1000, iterations:Infinity }); });
-function gearsRush(ms=1400){ gearAnims.forEach(a => a.updatePlaybackRate ? a.updatePlaybackRate(6) : a.playbackRate = 6);
+/* v2.24: the train is rebuilt from the painting's own metal (build_train.py) on a dark plate over the opening, because the painter's
+   wheels overlap and never meshed. A, B, C are one flat train (30/44/22 teeth, so B turns at 30/44 of A and C at 30/22, and the teeth stay
+   interlocked); D is a back-plane wheel behind A. One static light sits over the metal so the shading stays put while it turns. Teeser's centres. */
+const mech = document.createElement('div'); mech.id = 'mech'; world.appendChild(mech);   // the mechanism's own layer, above the pose frames. v2.37: Teeser 21:22, G13 behind B, A at 13 s
+const MECHV = 'a324c454';   // build stamp on every mechanism image URL (same file names each build; without this, browsers keep the old pictures)
+const TRAIN = { tilt:15, k:0.82, plate:[725, 823, 429, 329], opening:[[822, 858], [1102, 858], [1102, 1152], [822, 1152]],   // from mech_editor.html via build_mech.py; periods already follow tooth counts
+  gears:[
+    { k:'G9', x:1067, y:1119, half:40, N:18, phase:0.0, dir:-1, period:12, tilt:15, depth:3 },
+    { k:'G12', x:931, y:1046, half:64, N:32, phase:0.0, dir:1, period:30, tilt:15, depth:3 },
+    { k:'G5', x:1057, y:901, half:49, N:22, phase:0.0, dir:-1, period:34, tilt:11, depth:2.5 },
+    { k:'D', x:967, y:913, half:67, N:31, phase:0.0, dir:-1, period:18, tilt:15, depth:2 },
+    { k:'G6', x:913, y:1164, half:72, N:34, phase:10.159, dir:1, period:15.786, tilt:15, depth:2 },
+    { k:'G13', x:1035, y:1023, half:75, N:35, phase:0.0, dir:1, period:8, tilt:15, depth:2 },
+    { k:'G8', x:896, y:882, half:31, N:12, phase:10.175, dir:-1, period:5.571, tilt:15, depth:1.5 },
+    { k:'A', x:897, y:968, half:69, N:28, phase:0.0, dir:1, period:13, tilt:15, depth:0 },
+    { k:'B', x:1006, y:1032, half:100, N:42, phase:8.534, dir:-1, period:19.5, tilt:15, depth:0 },
+    { k:'C', x:822, y:1075, half:82, N:34, phase:4.229, dir:-1, period:15.786, tilt:15, depth:0 },
+    { k:'G7', x:846, y:896, half:47, N:18, phase:10.98, dir:-1, period:8.357, tilt:15, depth:0 },
+    { k:'G10', x:1105, y:978, half:43, N:16, phase:5.394, dir:1, period:7.429, tilt:15, depth:0 },
+    { k:'G11', x:1019, y:1177, half:67, N:27, phase:3.317, dir:1, period:12.536, tilt:15, depth:0 } ],
+  rods:[
+ ] };
+{ const [px,py,pw,ph] = TRAIN.plate, pl = new Image(); pl.src = 'img/train-plate.png?v='+MECHV; pl.className = 'gear'; pl.alt = '';
+  Object.assign(pl.style, { left:px+'px', top:py+'px', width:pw+'px', height:ph+'px' }); mech.appendChild(pl); }
+const gearAnims = TRAIN.gears.map(g => { const im = new Image(); im.src = `img/train-${g.k}.png?v=${MECHV}`; im.className = 'gear'; im.alt = '';
+  Object.assign(im.style, { left:(g.x-g.half)+'px', top:(g.y-g.half)+'px', width:2*g.half+'px', height:2*g.half+'px' }); mech.appendChild(im);
+  const pre = `rotate(${g.tilt}deg) scaleX(${TRAIN.k})`;   // free wheels may sit at their own tilt
+  return im.animate([{ transform:`${pre} rotate(${g.phase}deg)` }, { transform:`${pre} rotate(${g.phase + 360*g.dir}deg)` }], { duration:g.period*1000, iterations:Infinity }); });
+TRAIN.rods.forEach(r => { const im = new Image(); im.src = `img/rod-${r.k}.png?v=${MECHV}`; im.className = 'gear'; im.alt = '';
+  Object.assign(im.style, { left:(r.x-r.w/2)+'px', top:(r.y-r.h/2)+'px', width:r.w+'px', height:r.h+'px' }); mech.appendChild(im);
+  gearAnims.push(im.animate([{ transform:`rotate(${r.ang}deg) translateY(${-r.amp}px)` }, { transform:`rotate(${r.ang}deg) translateY(${r.amp}px)` }], { duration:r.period*1000, iterations:Infinity, direction:'alternate', easing:'ease-in-out' })); });
+{ const [px,py,pw,ph] = TRAIN.plate, sd = new Image(); sd.src = 'img/train-shadow.png?v='+MECHV; sd.className = 'gear'; sd.alt = '';   // the cabinet's shadow falls into the box
+  Object.assign(sd.style, { left:px+'px', top:py+'px', width:pw+'px', height:ph+'px' }); mech.appendChild(sd);
+  const lt = new Image(); lt.src = 'img/train-light.png?v='+MECHV; lt.className = 'gear'; lt.alt = '';
+  Object.assign(lt.style, { left:px+'px', top:py+'px', width:pw+'px', height:ph+'px' }); mech.appendChild(lt);
+  mech.style.clipPath = 'polygon(' + TRAIN.opening.map(p => p[0]+'px '+p[1]+'px').join(',') + ')';   // v2.27: clipped to the opening; no cover image, nothing to misregister
+}
+function gearsRush(ms=1400){ gearAnims.forEach(a => a.updatePlaybackRate ? a.updatePlaybackRate(6) : a.playbackRate = 6); humTo(HUM_VOL, 300); setTimeout(() => humTo(HUM_BED, 900), ms);
   setTimeout(() => gearAnims.forEach(a => a.updatePlaybackRate ? a.updatePlaybackRate(1) : a.playbackRate = 1), ms); }
 { const ws = new Image(); ws.src = 'img/plate.png'; ws.className = 'wallsign'; ws.alt = 'The Mechanical Turk does not speak. Kindly read his cards.'; world.appendChild(ws); }
 [ { x:1477, y:284, w:150, h:360, o:.32, t:26 }, { x:1477, y:284, w:130, h:330, o:.22, t:19, b:1 },     // over the tall candle
@@ -640,8 +679,8 @@ muteBtn.onclick = () => { muted = !muted; music.muted = muted; muteBtn.classList
 /* sound effects — Web Audio (iOS-safe), falls back to <audio> if fetch is blocked (file://) */
 const SFX_SRC = { tick:'audio/sfx-tick.mp3', gears:'audio/sfx-gears.mp3', swipe:'audio/sfx-swipe.mp3', swish:'audio/sfx-swish.mp3',
   ting:'audio/sfx-ting.mp3', yawn:'audio/sfx-yawn.mp3', yawn2:'audio/sfx-yawn2.mp3', creak:'audio/sfx-creak.mp3',
-  appear:'audio/sfx-appear.mp3', voice1:'audio/voice1.mp3', voice2:'audio/voice2.mp3', voice3:'audio/voice3.mp3', voice4:'audio/voice4.mp3' };   // appear: magic mallet (freesound community) – check licence
-const SFX_VOL = { yawn2:.6, voice1:.95, voice2:.95, voice3:1, voice4:1, tick:.22, gears:.3, swipe:.45, swish:.4, ting:.35, yawn:.45, flame:.22, thump:.75, snap:.5, appear:.6, creak:.7 };   // tune here
+  appear:'audio/sfx-appear.mp3', clack:'audio/sfx-clack.mp3', voice1:'audio/voice1.mp3', voice2:'audio/voice2.mp3', voice3:'audio/voice3.mp3', voice4:'audio/voice4.mp3' };   // appear: magic mallet (freesound community) – check licence
+const SFX_VOL = { yawn2:.6, voice1:.95, voice2:.95, voice3:1, voice4:1, tick:.22, gears:.3, swipe:.45, swish:.4, ting:.35, yawn:.45, flame:.22, thump:.75, snap:.5, appear:.6, creak:.7, clack:.45 };   // tune here
 const SFX = { ctx:null, buf:{}, master:null, amb:null };
 function sfxInit(){
   try { SFX.ctx = new (window.AudioContext || window.webkitAudioContext)(); SFX.master = SFX.ctx.createGain(); SFX.master.connect(SFX.ctx.destination); } catch(e){}
@@ -651,13 +690,25 @@ function sfxInit(){
       .then(d => SFX.buf[k] = d).catch(() => SFX.buf[k] = u);
   });
   SFX.amb = new Audio('audio/sfx-flame.mp3'); SFX.amb.loop = true; SFX.amb.volume = SFX_VOL.flame; SFX.amb.play().catch(()=>{});
+  if (SFX.ctx){ fetch('audio/sfx-hum.mp3').then(r => r.arrayBuffer()).then(b => new Promise((ok,no) => SFX.ctx.decodeAudioData(b, ok, no))).then(d => SFX.humBuf = d).catch(()=>{}); }   // v2.38: the works, humming
+  addEventListener('visibilitychange', () => { if (!document.hidden && SFX.ctx && SFX.ctx.state === 'suspended') SFX.ctx.resume().catch(()=>{}); });
+}
+/* v2.38: the hum of the mechanism — Web Audio through the master gain, so mute works and iOS honours the level */
+const HUM_VOL = .34, HUM_BED = .13;   // v2.39: levelled against the music (.17)
+function humTo(v, ms=800, tries=12){
+  if (!SFX.ctx) return;
+  if (!SFX.humBuf){ if (tries > 0) setTimeout(() => humTo(v, ms, tries-1), 400); return; }   // the buffer may still be decoding on a slow phone
+  if (!SFX.humGain){ SFX.humGain = SFX.ctx.createGain(); SFX.humGain.gain.value = 0; SFX.humGain.connect(SFX.master);
+    const src = SFX.ctx.createBufferSource(); src.buffer = SFX.humBuf; src.loop = true; src.connect(SFX.humGain); src.start(); }
+  const g = SFX.humGain.gain, t = SFX.ctx.currentTime; g.cancelScheduledValues(t); g.setValueAtTime(g.value, t); g.linearRampToValueAtTime(v, t + ms/1000);
 }
 function sfx(k, vol=1, delay=0){
   const b = SFX.buf[k]; if (!b || muted) return; const v = (SFX_VOL[k] ?? .4) * vol;
   if (typeof b === 'string'){ const a = new Audio(b); a.volume = Math.min(1,v); setTimeout(() => a.play().catch(()=>{}), delay*1000); return; }
+  if (SFX.ctx.state === 'suspended') SFX.ctx.resume().catch(()=>{});   // v2.38: after a phone lock the context sleeps
   const src = SFX.ctx.createBufferSource(), g = SFX.ctx.createGain(); src.buffer = b; g.gain.value = v;
   if (!k.startsWith('voice')) src.playbackRate.value = .94 + Math.random()*.12;   // slight variation so repeats don't sound canned (never on his voice)
-  src.connect(g).connect(SFX.master); src.start(SFX.ctx.currentTime + delay);
+  src.connect(g).connect(SFX.master); const at = SFX.ctx.currentTime + delay; src.start(at); return at;   // v2.38: the start time, for the mouth
 }
 
 /* v0.3: synthesised card snap and stamp thump (no files needed) */
@@ -769,7 +820,7 @@ async function intro(){
   bo.style.opacity = '.82'; await sleep(70); bo.style.opacity = '';   // a faint flicker in the dark: nothing there
   await sleep(1100);                             // dark
   setPose('look'); idle = 0;                      // he's there now, staring straight out; the lights take their time admitting it
-  sfx('appear');
+  sfx('appear'); humTo(HUM_VOL, 1500);   // v2.38: the works start up as he appears
   for (const [on, off] of [[60, 260], [110, 200], [180, 140], [300, 90]]){ bo.classList.remove('on'); await sleep(on); bo.classList.add('on'); await sleep(off); }
   bo.style.transition = 'opacity 1.1s ease'; bo.classList.remove('on'); await sleep(1100); bo.style.transition = '';
   await sleep(500); await blinkAt(); await sleep(400);   // v2.9: one blink, then the card (Teeser: it came too late)
@@ -780,7 +831,7 @@ async function intro(){
   await sleep(400); setPose('master','mid');     // back down to the table
   await sleep(500); await blinkDown();           // v2.10: one blink, not three (Teeser: gap after 'What fun.' too long)
   busy = false;
-  fadeTo(MUSIC_VOL, 3500);                       // the music only now, well after he's arrived
+  fadeTo(MUSIC_VOL, 3500); humTo(HUM_BED, 3500);   // the music only now, well after he's arrived; the hum drops to a bed under it
   await sleep(300); await say(LINES.premise); await sleep(1600);
   setPose('look','mid'); await sleep(500); await blinkAt(); await sleep(300);   // v2.11: back up at the reader, a blink...
   await say(LINES.surely); await sleep(1400);   // v2.22: +0.5 s (Teeser)
@@ -821,7 +872,8 @@ function jumpToCard(n){                          // prototype only: cards before
   busy = false; setPose('master'); go('ui'); zoomOut(); dealRound();
 }
 $('#skip5').onclick = () => { if (!busy) jumpToCard(5); };
-const DEV = /[?&]dev\b/.test(location.search); if (DEV) document.body.classList.add('dev');   // release: ?dev brings back the skip links and #house / #card5
+const DEV = /[?&]dev\b/.test(location.search); if (DEV) document.body.classList.add('dev');   // build v2.39 (sound levels)
+if (/[?&]gears\b/.test(location.search)) document.body.classList.add('gears');   // v2.23: outline the gear cut-outs, tint the cabinet front   // release: ?dev brings back the skip links and #house / #card5
 if (DEV && location.hash === '#card5'){                  // open the file with #card5 on the end: one tap and you're on card 5
   const a = $('#pier .approach .a1'); if (a) a.textContent = 'Tap: straight to card 5';
   $('#pier').addEventListener('click', e => { e.stopImmediatePropagation(); entered = approached = true;
@@ -1023,7 +1075,8 @@ async function revealHouse(el){
 
 /* Ernest speaks (cards 6-8): play pauses, the card steps aside, he looks at you and the phonograph plays.
    Subtitles go up phrase by phrase on the wallpaper beside him, so nothing is lost with the sound off. */
-const VOICE = {"1": {"dur": 7.6, "lead": 0.35, "mouth": "0000000122211332210000122210000011110001101111100000000000000000000000000000000000000000000000000000000000002222211100000011111111000000110000000000000000001000000000000000", "cues": [[0.65, "I do speak, by the way,"], [3.99, "but I was told not to."]]}, "2": {"dur": 11.5, "lead": 0.35, "mouth": "00000000100000001332223111233222211221002221010001110012102322100000000000000000000000022210002222211100011111001111100000000000000000000000000000000000000000000000000000000000000022220021110000000112211111111111000000000000000000000000000000000011111101000010000000000", "cues": [[0.65, "Every card you think you picked,"], [3.81, "I chose, by the way."], [7.53, "People are easily led."]]}, "3": {"dur": 11.16, "lead": 0.35, "mouth": "000000002322211332221102222221000322212211111112221100002210000000000000000000001222221112222222222210000000000000000000000000000022222221112222222211000000000122221111112212110011100001111110200001000000000000000000000000000000000022222222222211100000000000000", "cues": [[0.65, "The costume is part of the trick,"], [3.45, "so is the name."], [5.53, "I'm not really the Mechanical Turk."], [9.61, "I'm Ernest."]]}, "4": {"dur": 10.66, "lead": 0.35, "mouth": "00000002333211100121100000000000011011122111111211000000000000000000000123222222222221111111111111111222100000000000000000000000000000023322101110121100000000000000000000000000210112122221100011002222222100000000000000000000002211100011222211000000", "cues": [[0.65, "Right, that's it."], [3.21, "I'll email you your results."], [5.75, "Oh, actually,"], [7.39, "I've got an extra card"], [9.41, "just for you."]]}};
+const VOICE = {"1": {"dur": 7.6, "lead": 0.35, "mouth": "000000013322133332100012221100001111000000011110000000000000000000000000000000000000000000000000000000000000222222110000001111111100000000000000000000000000000000000000000", "cues": [[0.65, "I do speak, by the way,"], [3.99, "but I was told not to."]]}, "2": {"dur": 11.5, "lead": 0.35, "mouth": "00000000000000000333333222233333322221002221110001111112222332210000000000000000000000022211002222221100011100001111100000000000000000000000000000000000000000000000000000000000000022221111111000000112211111111111000000000000000000000000000000000011111110000000000000000", "cues": [[0.65, "Every card you think you picked,"], [3.81, "I chose, by the way."], [7.53, "People are easily led."]]}, "3": {"dur": 11.16, "lead": 0.35, "mouth": "00000000133322133321100233222210033322221111111132211000222110000000000000000000133322211222222222221100000000000000000000000000002233222211222222222110000000012222211111222111001110000111111111100000000000000000000000000000000000002332222222221100000000000000", "cues": [[0.65, "The costume is part of the trick,"], [3.45, "so is the name."], [5.53, "I'm not really the Mechanical Turk."], [9.61, "I'm Ernest."]]}, "4": {"dur": 10.66, "lead": 0.35, "mouth": "00000002333321100111110000000000011100022211000221100000000000000000000033332222222222111111111111111222110000000000000000000000000000023332210000111110000000000000000000000000221112222221100011002222222110000000000000000000002221100011222221100000", "cues": [[0.65, "Right, that's it."], [3.21, "I'll email you your results."], [5.75, "Oh, actually,"], [7.39, "I've got an extra card"], [9.41, "just for you."]]}};   // v2.38: tracks regenerated from the raw takes, vowel-gated (build_sound.py)
+const WIDE = false;   // v2.38: true -> mouth level 3 uses the wide-open frame
 async function speak(ci, card, opts={}){
   hideSayCard();
   const v = VOICE[ci+1]; if (!v) return;
@@ -1045,14 +1098,15 @@ async function speak(ci, card, opts={}){
   box.style.left = sx+'px'; box.style.top = sy+'px'; box.style.width = Math.min(innerWidth - sx - 14, 300)+'px';
   box.innerHTML = v.cues.map(c => `<span>${c[1]}</span>`).join(''); document.body.appendChild(box);
   const spans = [...box.children];
-  sfx('voice'+(ci+1), 1);
+  const at = sfx('voice'+(ci+1), 1), lat = (SFX.ctx && (SFX.ctx.outputLatency || SFX.ctx.baseLatency)) || 0;   // v2.38: mouth runs on the audio clock
   const t0 = performance.now(); talking = true; let lastFr = '';
   await new Promise(res => {
     (function tick(){
-      const t = (performance.now() - t0)/1000;
+      const t = at != null ? SFX.ctx.currentTime - at - lat : (performance.now() - t0)/1000;
       v.cues.forEach((c,j) => { if (t >= c[0]) spans[j].classList.add('on'); });
       const m = v.mouth[Math.floor((t - v.lead)/.04)] || '0';
-      const fr = m === '0' ? 'look' : m === '1' ? 'say1' : 'say2';   // the wide-open frame (say3) was too much
+      const fr = m === '0' ? 'look' : m === '1' ? 'say2' : (m === '3' && WIDE) ? 'say3' : 'say1';   // v2.38: say2 is the barely-parted frame, say1 the open one (the old map had them swapped); WIDE lets level 3 gape
+      if (fr !== lastFr && (fr === 'say1' || fr === 'say3') && (lastFr === 'look' || lastFr === 'say2')) sfx('clack', 1);   // v2.38: the jaw
       if (fr !== lastFr){ show(fr); lastFr = fr; }   // only touch the DOM when the mouth changes
       if (t < v.dur) requestAnimationFrame(tick); else res();
     })();
@@ -1149,7 +1203,7 @@ function portal(from){
   p.innerHTML = '<video poster="img/meadow.jpg" muted playsinline autoplay loop preload="auto"><source src="img/meadow.webm" type="video/webm"><source src="img/meadow.mp4" type="video/mp4"></video>';
   Object.assign(p.style, { left:r.left+'px', top:r.top+'px', width:r.width+'px', height:r.height+'px' });
   document.body.appendChild(p); p.querySelector('video').play().catch(()=>{});
-  fadeTo(0, 1400); if (SFX.amb) SFX.amb.volume = 0;
+  fadeTo(0, 1400); if (SFX.amb) SFX.amb.volume = 0; humTo(0, 1400);
   p.getBoundingClientRect(); p.classList.add('open');
   if (fromEl) setTimeout(() => { fromEl.style.opacity = 0; }, 300);
   setTimeout(() => { location.href = NOVEL.url; }, 2600);
