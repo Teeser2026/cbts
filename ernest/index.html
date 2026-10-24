@@ -111,7 +111,8 @@ body.endlit #world{filter:brightness(1.05)}
 #pier:not(.near) .rglow{opacity:0;animation:none}
 #pier .veil{position:absolute;inset:0;background:#000;opacity:0;transition:opacity .6s ease;pointer-events:none}
 #pier.through .veil{opacity:1}
-.wallsign{position:absolute;left:540px;top:874px;width:172px;height:80px}
+video::-webkit-media-controls-start-playback-button,video::-webkit-media-controls{display:none!important;-webkit-appearance:none}   /* v2.51: no iOS play triangle when autoplay is blocked (Low Power Mode); the poster shows */
+.wallsign{position:absolute;left:525px;top:979px;width:200px;height:112px;z-index:1000000;pointer-events:none;transform:skewY(-4.8deg);filter:drop-shadow(1px 2px 1.5px rgba(0,0,0,.7)) drop-shadow(0 1px 4px rgba(0,0,0,.35))}   /* v2.46: drawn plate on the door panel; above the pose frames, whose z-index climbs per dissolve */
 .gear{position:absolute;pointer-events:none;will-change:transform;transform-origin:50% 50%}
 #mech{position:absolute;inset:0;pointer-events:none;z-index:4000000}   /* v2.25: above the pose frames, whose z-index climbs by one per dissolve (show) */
 .cabfront{position:absolute;pointer-events:none}
@@ -456,7 +457,7 @@ const SCENE = {
   m3d:["matrix3d(0.468099,0.020641,0.000000,0.000092,0.324332,0.139107,0.000000,-0.000016,0.000000,0.000000,1.000000,0.000000,638.476013,721.585876,0.000000,1.000000)", "matrix3d(0.506509,0.072577,0.000000,0.000143,-0.078841,-0.091149,0.000000,-0.000325,0.000000,0.000000,1.000000,0.000000,788.000000,709.000000,0.000000,1.000000)", "matrix3d(0.492529,0.044214,0.000000,0.000082,0.216380,0.125275,0.000000,-0.000032,0.000000,0.000000,1.000000,0.000000,897.598450,698.469421,0.000000,1.000000)"],
   finger:{"x": 842, "y": 695, "w": 16, "h": 14},
   zoom:{ x:800, y:520, z:1.35 },
-  sign:{ x:625, y:914 },   // brass plate on the left cabinet door              // 'The Automaton does not speak' placard on the wall       // camera move when a card is picked
+  sign:{ x:625, y:1035 },   // v2.46: moved down onto the door panel   // brass plate on the left cabinet door              // 'The Automaton does not speak' placard on the wall       // camera move when a card is picked
   candles:[ {x:1477,y:300,c:''}, {x:1614,y:518,c:'b'} ],
   cuff:{ x:650, y:500 },               // where the kept-back card comes out of his sleeve
   door:{ x:1075, y:960 },              // the dark gap behind the open cabinet door
@@ -519,7 +520,7 @@ TRAIN.rods.forEach(r => { const im = new Image(); im.src = `img/rod-${r.k}.png?v
 }
 function gearsRush(ms=1400){ gearAnims.forEach(a => a.updatePlaybackRate ? a.updatePlaybackRate(6) : a.playbackRate = 6); humTo(HUM_VOL, 300); setTimeout(() => humTo(HUM_BED, 900), ms);
   setTimeout(() => gearAnims.forEach(a => a.updatePlaybackRate ? a.updatePlaybackRate(1) : a.playbackRate = 1), ms); }
-{ const ws = new Image(); ws.src = 'img/plate.png'; ws.className = 'wallsign'; ws.alt = 'The Mechanical Turk does not speak. Kindly read his cards.'; world.appendChild(ws); }
+{ const ws = new Image(); ws.src = 'img/plate2.webp?v=2'; ws.className = 'wallsign'; ws.alt = 'The Mechanical Turk does not speak. Kindly read his cards.'; world.appendChild(ws); }   // v2.51: Teeser's second plaque (plain T), fitted and colour-matched (plate2/build_plate3.py)
 [ { x:1477, y:284, w:150, h:360, o:.32, t:26 }, { x:1477, y:284, w:130, h:330, o:.22, t:19, b:1 },     // over the tall candle
   { x:1607, y:520, w:110, h:280, o:.26, t:22 }, { x:1607, y:520, w:96, h:250, o:.18, t:16, b:1 } ]  // over the short one
   .forEach(p => { const d = document.createElement('div'); d.className = 'smoke' + (p.b ? ' b' : '');
@@ -808,8 +809,8 @@ async function intro(){
   world.style.transition = 'none'; camAt(1.5, 1545, 470); world.getBoundingClientRect();
   await sleep(2200);
   world.style.transition = 'transform 3.6s ease-in-out, filter 1s ease';
-  camAt(2.4, SCENE.sign.x, SCENE.sign.y - 30);   // a slow drift down to the plate, never past the bottom of the image
-  await sleep(4200);
+  camAt(2.4, SCENE.sign.x, SCENE.sign.y);   // v2.46: aim at the plate; camAt clamps at the image bottom   // a slow drift down to the plate, never past the bottom of the image
+  await sleep(4700);                             // v2.48: +0.5 s on the plate (Teeser)
   world.style.transition = 'transform 1.8s ease-in-out, filter 1s ease';
   zoomOut();                                     // up to the empty chair
   await sleep(1800 + 1200);                      // ...and hold on it
@@ -873,7 +874,7 @@ function jumpToCard(n){                          // prototype only: cards before
   busy = false; setPose('master'); go('ui'); zoomOut(); dealRound();
 }
 $('#skip5').onclick = () => { if (!busy) jumpToCard(5); };
-const DEV = /[?&]dev\b/.test(location.search); if (DEV) document.body.classList.add('dev');   // build v2.45 (iPhone Your Cards scroll fixed)
+const DEV = /[?&]dev\b/.test(location.search); if (DEV) document.body.classList.add('dev');   // build v2.51 (second plaque; no iOS play triangle)
 if (/[?&]gears\b/.test(location.search)) document.body.classList.add('gears');   // v2.23: outline the gear cut-outs, tint the cabinet front   // release: ?dev brings back the skip links and #house / #card5
 if (DEV && location.hash === '#card5'){                  // open the file with #card5 on the end: one tap and you're on card 5
   const a = $('#pier .approach .a1'); if (a) a.textContent = 'Tap: straight to card 5';
