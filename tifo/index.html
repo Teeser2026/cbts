@@ -240,6 +240,9 @@ body.can-edit .slot.is-empty::before{content:"[ " attr(data-label) " ]"}
 /* card content box = 88.8% of card width (5.6% padding each side), so 1% of card width = 1.126cqw.
    TEESER: cap height 7% of card width, baseline at 96.27% of card height. --capr and --k come from the font's own metrics. */
 .fit{font-size:calc(7.883cqw / var(--capr,.72) * var(--s,1))!important;top:calc(96.27% - var(--k,.95) * 1em)!important;bottom:auto!important}
+
+/* ===== v23: break the width<->height loop. Width comes only from the column; height follows by aspect-ratio. ===== */
+.cover,.back.card,.back-list .tlist>div{width:100%;justify-self:stretch;min-width:0;box-sizing:border-box}
 </style>
 
 <div class="wrap">
