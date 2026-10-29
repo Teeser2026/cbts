@@ -234,6 +234,12 @@ body.can-edit .slot.is-empty::before{content:"[ " attr(data-label) " ]"}
 .more a{display:block;padding:.9em 1.1em;background:#0c0c0c;color:#fff;text-decoration:none;font:800 1.15rem/1.2 var(--display);text-transform:uppercase;letter-spacing:.02em}
 .more a span{display:block;margin-top:.35em;font:400 .72rem/1.4 var(--mono);letter-spacing:.1em;text-transform:none;opacity:.75}
 .more a:hover,.more a:focus-visible{background:#ac3732}
+
+/* ===== v22: square back card at every width; bottom lines placed by CSS, not stale pixels ===== */
+.back.card .standfirst{line-height:7.2cqi}
+/* card content box = 88.8% of card width (5.6% padding each side), so 1% of card width = 1.126cqw.
+   TEESER: cap height 7% of card width, baseline at 96.27% of card height. --capr and --k come from the font's own metrics. */
+.fit{font-size:calc(7.883cqw / var(--capr,.72) * var(--s,1))!important;top:calc(96.27% - var(--k,.95) * 1em)!important;bottom:auto!important}
 </style>
 
 <div class="wrap">
@@ -341,29 +347,27 @@ body.can-edit .slot.is-empty::before{content:"[ " attr(data-label) " ]"}
 </div>
 <script>
 (function(){
-  // TEESER on the cover (1500px master): cap height 105px, baseline at y=1444, right edge at x=1447
-  var CAP=105/1500, BASE=1444/1500;
+  // Measure the display face once: cap-height ratio and baseline offset (both in em), handed to CSS as variables.
   function metrics(){
     var c=document.createElement('canvas').getContext('2d');
     c.font='900 100px "Big Shoulders Display"';
     var t=c.measureText('H'), cap=t.actualBoundingBoxAscent/100;
-    if(!(cap>0.3)) return null;
+    if(!(cap>0.3)) return false;
     var fa=(t.fontBoundingBoxAscent||t.actualBoundingBoxAscent*1.25)/100, fd=(t.fontBoundingBoxDescent||28)/100;
-    return {cap:cap,fa:fa,fd:fd};
+    var r=document.documentElement.style;
+    r.setProperty('--capr',cap.toFixed(4));
+    r.setProperty('--k',((1-(fa+fd))/2+fa).toFixed(4));
+    return true;
   }
-  function fit(){
-    var m=metrics(); if(!m) return;
+  // Only if a line would overflow its card: a proportional shrink factor, which stays valid at any width.
+  function shrink(){
     var els=document.querySelectorAll('.fit');
     for(var i=0;i<els.length;i++){
-      var el=els[i], card=el.closest('.card,.tlist>div'); if(!card) continue;
-      var W=card.clientWidth, H=card.clientHeight, fs=CAP*W/m.cap;
-      el.style.fontSize=fs+'px';
-      if(el.scrollWidth>el.clientWidth){ fs=fs*el.clientWidth/el.scrollWidth*0.99; el.style.fontSize=fs+'px'; }
-      var lead=(fs-(m.fa+m.fd)*fs)/2;
-      el.style.top=(BASE*H-lead-m.fa*fs)+'px'; el.style.bottom='auto';
+      var el=els[i]; el.style.setProperty('--s','1');
+      if(el.clientWidth>0 && el.scrollWidth>el.clientWidth) el.style.setProperty('--s',(el.clientWidth/el.scrollWidth*0.99).toFixed(4));
     }
   }
-  function run(){ try{ fit(); }catch(e){} }
+  function run(){ try{ metrics(); shrink(); }catch(e){} }
   run();
   try{
     if(document.fonts){
