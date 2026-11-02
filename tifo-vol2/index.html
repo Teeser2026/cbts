@@ -36,6 +36,10 @@ a{color:inherit}
 .side li{flex:1;display:flex;align-items:center;gap:4cqi;border-bottom:1px dashed #2a2b2e}
 .side .tn{font:500 2.8cqi/1 var(--mono);color:var(--cream-soft);width:6cqi}
 .side .empty{font:700 4.2cqi/1 var(--display);text-transform:uppercase;letter-spacing:.03em;color:#4a4842}
+.side li>a{flex:1;display:flex;align-items:baseline;gap:3cqi;text-decoration:none;min-width:0}
+.side .tt{font:700 4.2cqi/1 var(--display);text-transform:uppercase;letter-spacing:.03em;color:var(--cream)}
+.side .ta{margin-left:auto;font:italic 400 3.2cqi/1 var(--body);color:var(--cream-soft);white-space:nowrap}
+.side li>a:hover .tt{color:#fff}
 /* Below the sleeve */
 .panel{max-width:42rem;margin:0 auto;padding:clamp(14px,3vw,28px) 0}
 .strip{background:var(--black);color:#fff;padding:.7em 1em;margin:0 0 1em;font:900 clamp(1.8rem,5vw,2.6rem)/1 var(--display);text-transform:uppercase;letter-spacing:.01em}
@@ -50,6 +54,13 @@ p,li{text-wrap:pretty}
 #add .strip,#tracks .strip{background:var(--red)}
 #ask .strip{background:var(--blue)}
 .todo{background:#fff3b0;padding:0 .2em}
+.track{margin:0 0 2.2em;scroll-margin-top:16px}
+.track .th{display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:.9em;align-items:center;background:var(--black);color:#fff;padding:.8em 1.1em;margin:0 0 1.1em}
+.track .tnum{grid-row:span 2;font:500 .85rem/1 var(--mono);letter-spacing:.08em}
+.track h3{margin:0;font:900 clamp(1.8rem,5vw,2.6rem)/.95 var(--display);text-transform:uppercase}
+.track .tart{font-style:italic;font-size:1rem;opacity:.85;margin-top:.25em}
+.track .tart a{color:inherit}
+.track .prose p{margin:0 0 .8em}
 .none{font-style:italic;color:var(--ink-soft)}
 .more{display:grid;gap:.6em;margin-top:1.4em}
 .more a{display:block;padding:.9em 1.1em;background:var(--black);color:#fff;text-decoration:none;font:800 1.15rem/1.2 var(--display);text-transform:uppercase;letter-spacing:.02em}
@@ -72,7 +83,7 @@ p,li{text-wrap:pretty}
     <div class="rule" aria-hidden="true"></div>
     <p class="fit">We want our Palace back</p>
   </div>
-  <div class="card side a"><h2>Side A</h2><ol><li><span class="tn">A1</span><span class="empty">Your track here</span></li><li><span class="tn">A2</span><span class="empty">Your track here</span></li><li><span class="tn">A3</span><span class="empty">Your track here</span></li><li><span class="tn">A4</span><span class="empty">Your track here</span></li><li><span class="tn">A5</span><span class="empty">Your track here</span></li><li><span class="tn">A6</span><span class="empty">Your track here</span></li><li><span class="tn">A7</span><span class="empty">Your track here</span></li></ol><div class="rule" aria-hidden="true"></div><p class="fit r">Till the end of time</p></div>
+  <div class="card side a"><h2>Side A</h2><ol><li><span class="tn">A1</span><a href="#a1"><span class="tt">Abide With Me</span><span class="ta">Paul Darville</span></a></li><li><span class="tn">A2</span><span class="empty">Your track here</span></li><li><span class="tn">A3</span><span class="empty">Your track here</span></li><li><span class="tn">A4</span><span class="empty">Your track here</span></li><li><span class="tn">A5</span><span class="empty">Your track here</span></li><li><span class="tn">A6</span><span class="empty">Your track here</span></li><li><span class="tn">A7</span><span class="empty">Your track here</span></li></ol><div class="rule" aria-hidden="true"></div><p class="fit r">Till the end of time</p></div>
   <div class="card side b"><h2>Side B</h2><ol><li><span class="tn">B1</span><span class="empty">Your track here</span></li><li><span class="tn">B2</span><span class="empty">Your track here</span></li><li><span class="tn">B3</span><span class="empty">Your track here</span></li><li><span class="tn">B4</span><span class="empty">Your track here</span></li><li><span class="tn">B5</span><span class="empty">Your track here</span></li><li><span class="tn">B6</span><span class="empty">Your track here</span></li><li><span class="tn">B7</span><span class="empty">Your track here</span></li></ol><div class="rule" aria-hidden="true"></div><p class="fit">You know it’s true</p></div>
 </section>
 <section class="panel" id="add">
@@ -95,7 +106,7 @@ p,li{text-wrap:pretty}
 </section>
 <section class="panel" id="tracks">
   <h2 class="strip">The tracks</h2>
-  <p class="none">No tracks yet. A1 is waiting.</p>
+  <article class="track" id="a1"><header class="th"><span class="tnum">A1</span><h3>Abide With Me</h3><span class="tart">Paul Darville · <a href="https://x.com/cpfcpatriot" target="_blank" rel="noopener">@cpfcpatriot</a></span></header><div class="prose"><p>Holding a photo of my Grandad at THE Final. With sunglasses on to hide the inevitable tears. Feeling a hand on my shoulder and turning to see my Dad covering his face too. We’d laid him to rest 15 months earlier to the very same song. One of our last conversations was “We’ll win something when I’m gone!”.</p><p>17th May. From morning to night. The unity, the colour, the noise. Fan-made, fan-led and a culture that was the envy of the footballing world.</p><p>Tears of Euphoria swept through.</p><p>The streets of London paved in Red, Blue and finally, Silver.</p><p>Palace is a family. A culture of those that came before and will come afterwards.</p><p>It cannot be manufactured.</p></div></article>
   <nav class="more" aria-label="More">
     <a href="../tifo/">The first album: A Tifo for an Empty Stand<span>cantbeatthesystem.com/tifo</span></a>
     <a href="https://substack.com/@cantbeatthesystem" target="_blank" rel="noopener">My Substack<span>substack.com/@cantbeatthesystem</span></a>
