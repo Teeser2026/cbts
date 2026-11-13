@@ -128,6 +128,25 @@ a:focus-visible{outline:2px solid var(--red);outline-offset:3px}
 .prose ul.tl{list-style:none;padding:0;border-top:1px solid var(--rule)}
 .prose ul.tl li{padding:.7em 0;border-bottom:1px solid var(--rule);margin:0}
 .prose ul.tl li strong{font-size:1.1em;color:var(--red)}
+
+/* Four-square sleeve, as /tifo/: cover, black back, Side A and Side B inserts */
+.back.black{background:var(--grain),#141519;outline:1px solid #34373f;outline-offset:-1px}
+.back .pu{position:absolute;left:0;right:0;top:22cqw;margin:0;text-align:center;font:900 20cqw/.88 var(--display);text-transform:uppercase;color:#ece6da;letter-spacing:-.005em}
+.back .pu span{display:block}
+.back.black .rule{background:#2f4fb4}
+.back.black .sleeveline{color:#c23b33}
+.sidehd{position:absolute;left:5.6cqw;right:5.6cqw;top:6cqw;margin:0;font:500 3cqw/1 var(--mono);letter-spacing:.2em;text-transform:uppercase}
+.ins.sa .sidehd{color:var(--red)}
+.ins.sb .sidehd{color:var(--navy)}
+.bands.ins{top:12cqw;bottom:17cqw;display:flex;flex-direction:column}
+.bands.ins li{flex:1 1 0;display:flex;min-height:0}
+.bands.ins a{flex:1;height:auto;padding-top:0;align-items:center;grid-template-columns:8cqw minmax(0,1fr) auto}
+.bands.ins .tn{font-size:2.6cqw}
+.bands.ins .tt{font-size:4.5cqw;color:var(--ink)}
+.bands.ins .ta{font-size:3cqw}
+.ins.sa .rule{background:var(--red)}
+.ins.sa .sleeveline{color:var(--navy);left:auto;right:3.6cqw}
+.ins.sb .sleeveline{color:var(--red)}
 </style>
 </head>
 <body>
@@ -141,11 +160,25 @@ a:focus-visible{outline:2px solid var(--red);outline-offset:3px}
         <span class="artist c">TEESER</span>
       </div>
     </div>
-    <div class="back paper">
+    <div class="back black" role="img" aria-label="Back: Persons Unknown, HF05">
       <div class="cv">
-        <div class="cat"><span>Cat. no. SE25 6PU-05</span><span>LP · Stereo · 2026</span></div>
-        <h2 class="u">This Mentality Is Unstoppable*</h2>
-        <ol class="bands u"><li class="a"><a href="#a1"><span class="tn">A1</span><span class="tt">Monkey Man</span><span class="ta">Toots &amp; the Maytals</span></a></li><li class="a"><a href="#a2"><span class="tn">A2</span><span class="tt">Against All Odds</span><span class="ta">Phil Collins</span></a></li><li class="a"><a href="#a3"><span class="tn">A3</span><span class="tt">Never Tear Us Apart</span><span class="ta">INXS</span></a></li><li class="aa"><a href="#b1"><span class="tn">B1</span><span class="tt">I Fought the Law</span><span class="ta">The Clash</span></a></li><li class="aa"><a href="#b2"><span class="tn">B2</span><span class="tt">I Heard It Through the Grapevine</span><span class="ta">Marvin Gaye</span></a></li><li class="aa"><a href="#b3"><span class="tn">B3</span><span class="tt">Has It Come to This?</span><span class="ta">The Streets</span></a></li><li class="aa"><a href="#b4"><span class="tn">B4</span><span class="tt">Drain You</span><span class="ta">Nirvana</span></a></li><li class="aa"><a href="#b5"><span class="tn">B5</span><span class="tt">Why?</span><span class="ta">The Specials</span></a></li><li class="aa"><a href="#b6"><span class="tn">B6</span><span class="tt">The Way It Is</span><span class="ta">Bruce Hornsby and the Range</span></a></li><li class="aa"><a href="#b7"><span class="tn">B7</span><span class="tt">The End</span><span class="ta">The Doors</span></a></li></ol>
+        <h2 class="pu"><span>Persons</span><span>Unknown</span></h2>
+        <div class="rule"></div>
+        <p class="sleeveline">HF05</p>
+      </div>
+    </div>
+    <div class="back paper ins sa">
+      <div class="cv">
+        <p class="sidehd">Side A · The Holmesdale</p>
+        <ol class="bands ins"><li class="a"><a href="#a1"><span class="tn">A1</span><span class="tt">Monkey Man</span><span class="ta">Toots &amp; the Maytals</span></a></li><li class="a"><a href="#a2"><span class="tn">A2</span><span class="tt">Against All Odds</span><span class="ta">Phil Collins</span></a></li><li class="a"><a href="#a3"><span class="tn">A3</span><span class="tt">Never Tear Us Apart</span><span class="ta">INXS</span></a></li></ol>
+        <div class="rule"></div>
+        <p class="sleeveline">We Are the Holmesdale</p>
+      </div>
+    </div>
+    <div class="back paper ins sb">
+      <div class="cv">
+        <p class="sidehd">Side B · The High Court</p>
+        <ol class="bands ins"><li class="aa"><a href="#b1"><span class="tn">B1</span><span class="tt">I Fought the Law</span><span class="ta">The Clash</span></a></li><li class="aa"><a href="#b2"><span class="tn">B2</span><span class="tt">I Heard It Through the Grapevine</span><span class="ta">Marvin Gaye</span></a></li><li class="aa"><a href="#b3"><span class="tn">B3</span><span class="tt">Has It Come to This?</span><span class="ta">The Streets</span></a></li><li class="aa"><a href="#b4"><span class="tn">B4</span><span class="tt">Drain You</span><span class="ta">Nirvana</span></a></li><li class="aa"><a href="#b5"><span class="tn">B5</span><span class="tt">Why?</span><span class="ta">The Specials</span></a></li><li class="aa"><a href="#b6"><span class="tn">B6</span><span class="tt">The Way It Is</span><span class="ta">Bruce Hornsby and the Range</span></a></li><li class="aa"><a href="#b7"><span class="tn">B7</span><span class="tt">The End</span><span class="ta">The Doors</span></a></li></ol>
         <div class="rule"></div>
         <p class="sleeveline">’Til the end of time</p>
       </div>
